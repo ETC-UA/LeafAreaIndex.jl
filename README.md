@@ -1,3 +1,3 @@
 # LeafAreaIndex
 
-[![Build Status](https://travis-ci.org/Ken-B/LeafAreaIndex.jl.svg?branch=master)](https://travis-ci.org/Ken-B/LeafAreaIndex.jl)
+[![Build Status](https://travis-ci.org/ETC-UA/LeafAreaIndex.jl.svg?branch=master)](https://travis-ci.org/ETC-UA/LeafAreaIndex.jl)
