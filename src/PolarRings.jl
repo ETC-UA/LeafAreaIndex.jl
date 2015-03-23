@@ -14,7 +14,7 @@ function PolarRings(polim::PolarImage, θ1::Real, θ2::Real)
     θ2 > 90 && throw(DomainError())
     ind_first = searchsortedfirst(polim.cl.ρ²unique, polim.cl.fθR(θ1)^2) 
     ind_last = searchsortedlast(polim.cl.ρ²unique, polim.cl.fθR(θ2)^2) 
-    ind = [0, polim.ρ²Ncs] #add 0 for start of first range
+    ind = [0, polim.cl.ρ²Ncs] #add 0 for start of first range
     PolarRings{eltype(polim.img),typeof(polim.img)}(polim, ind_first, ind_last, ind)
 end
 # Defining start, done and next methods will make PolarRings an iterator
