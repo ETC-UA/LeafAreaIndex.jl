@@ -18,3 +18,5 @@ genPolarImage(M) = PolarImage(M, gencalibrate(M))
 
 # convenience method for checking memory size of PolarImage object for testing
 Base.sizeof(polim::PolarImage) = sum([sizeof(getfield(polim,n)) for n in names(polim)])
+
+Base.eltype{T}(polim::PolarImage{T}) = T

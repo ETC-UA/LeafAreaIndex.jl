@@ -7,9 +7,9 @@
 type CameraLens
     size1::Uint32 #number of rows in picture (heigth)
     size2::Uint32 #number of columns in picture (width)
-    ci::Uint32    #lens center is located at picture[ci,cj]
+    ci::Uint32    #lens center is located at image[ci,cj]
     cj::Uint32
-    fθR::Function           #projection function θ->pixels (θ in degrees)
+    fθR::Function           #projection function θ->pixels (θ in [0,π/2])
     fRθ::Function           #inverse projection function pixels->θ
     #ρ²::Array{Uint32,2}     #squared distance to center for each point
     #ϕ::Array{Float64,2}     #azimuth angle [-π,π]
@@ -39,7 +39,7 @@ function calibrate(size1, size2, ci, cj, fθR, fRθ)
 
     ind = sortperm(reshape(ρ²+ϕ/10, length(ρ²)))
     ρ²sort = ρ²[ind]
-    Rmax = fθR(90)
+    Rmax = fθR(π/2)
     indmax = searchsortedlast(ρ²sort, Rmax^2)
     ρ²sort = ρ²sort[1:indmax]
     ind = ind[1:indmax]
@@ -56,7 +56,7 @@ function gencalibrate(M::AbstractMatrix)
     size1, size2 = size(M)
     ci,cj = iceil(size1/2), iceil(size2/2) #center point
     Rmax = min(ci, cj, size2-ci, size2-cj) 
-    fθR(θ) = θ / 90 * Rmax
-    fRθ(R) = R / Rmax * 90
+    fθR(θ) = θ / (π/2) * Rmax
+    fRθ(R) = R / Rmax * π/2
     CameraLens(size1, size2, ci, cj, fθR, fRθ)
 end

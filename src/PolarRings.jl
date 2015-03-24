@@ -11,7 +11,7 @@ end
 
 function PolarRings(polim::PolarImage, θ1::Real, θ2::Real)
     θ1 < 0 && throw(DomainError())        
-    θ2 > 90 && throw(DomainError())
+    θ2 > π/2 && throw(DomainError())
     ind_first = searchsortedfirst(polim.cl.ρ²unique, polim.cl.fθR(θ1)^2) 
     ind_last = searchsortedlast(polim.cl.ρ²unique, polim.cl.fθR(θ2)^2) 
     ind = [0, polim.cl.ρ²Ncs] #add 0 for start of first range

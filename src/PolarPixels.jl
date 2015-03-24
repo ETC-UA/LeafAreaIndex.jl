@@ -10,7 +10,7 @@ end
 # PolarPixels constructor
 function PolarPixels(polim::PolarImage, θ1::Real, θ2::Real)
     θ1 < 0 && throw(DomainError())
-    θ2 > 90 && throw(DomainError())
+    θ2 > π/2 && throw(DomainError())
     ind_first = searchsortedfirst(polim.cl.ρ²sort, polim.cl.fθR(θ1)^2)
     ind_last = searchsortedlast(polim.cl.ρ²sort, polim.cl.fθR(θ2)^2) 
     PolarPixels{eltype(polim.img), typeof(polim.img)}(ind_first, ind_last, polim)
