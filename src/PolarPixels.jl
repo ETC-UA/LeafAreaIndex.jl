@@ -25,4 +25,4 @@ Base.length(pc::PolarPixels) = pc.ind_last - pc.ind_first + 1
 Base.endof(pc::PolarPixels) = pc.polim.imgsort[pc.ind_last]
 pixels{T,A}(polim::PolarImage{T,A}, θ1::Real, θ2::Real) = collect(T, PolarPixels(polim,θ1,θ2))
 pixels(polim::PolarImage, θ::Real) = pixels(polim, zero(θ), θ)
-pixels(polim::PolarImage) = pixels(polim, 90)
+pixels(polim::PolarImage) = pixels(polim, π/2)
