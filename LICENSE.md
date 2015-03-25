@@ -1,6 +1,6 @@
 The LeafAreaIndex.jl package is licensed under the MIT "Expat" License:
 
-> Copyright (c) 2015: Universiteit Antwerpen.
+> Copyright (c) 2015: Ken Bastiaensen.
 >
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the
