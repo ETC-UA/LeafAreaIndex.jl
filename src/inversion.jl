@@ -1,5 +1,9 @@
 
 const DEF_GROUPS = 10
+const LANG_START = 25/180*pi
+const LANG_END = 65/180*pi
+const LANG_STEPS = 50
+
 
 function zenith57(polim::PolarImage, thresh::Real; ringwidth=RING_WIDTH)
     G = 0.5 
@@ -79,3 +83,9 @@ function millerrings(polim::PolarImage, thresh::Real)
     millerrings(polim, Nrings, thresh)
 end
 millerrings(polim::PolarImage) = millerrings(polim, threshold(polim))
+
+function lang(polim::PolarImage, thresh::Real) 
+    θvals = linspace(LANG_START, LANG_END, LANG_STEPS)
+    Kapprox = Float64[contactfreq(polimg, θ, thresh) for θ = θvals]
+    2*sum(linreg(θvals, Kapprox))
+end
