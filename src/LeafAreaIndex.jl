@@ -1,6 +1,6 @@
 module LeafAreaIndex
 
-import FixedPointNumbers: Ufixed
+import FixedPointNumbers
 import StreamStats
 
 using Lexicon
