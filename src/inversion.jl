@@ -16,7 +16,7 @@ zenith57(polim::PolarImage) = zenith57(polim, threshold(polim))
 
 # Miller's formule with constant leaf angel
 
-miller(polim::PolarImage, thresh::Real) = millergroup(polim, tresh)
+miller(polim::PolarImage, thresh::Real) = millergroup(polim, thresh)
 miller(polim::PolarImage) = millergroup(polim, threshold(polim))
 
 function millersimple(polim::PolarImage, thresh::Real)

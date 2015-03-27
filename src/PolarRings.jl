@@ -34,5 +34,5 @@ function Base.next(pr::PolarRings, i)
 end
 
 rings(polim::PolarImage, θ1::Real, θ2::Real) = PolarRings(polim, θ1, θ2)
-rings(polim::PolarImage, θ::Real) = PolarRings(polim, zero(θ), θ)
-rings(polim::PolarImage) = PolarRings(polim, pi/2)
+rings(polim::PolarImage, θ::Real) = rings(polim, zero(θ), θ)
+rings(polim::PolarImage) = rings(polim, pi/2)
