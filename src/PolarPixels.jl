@@ -11,8 +11,8 @@ end
 function PolarPixels(polim::PolarImage, θ1::Real, θ2::Real)
     θ1 < 0 && throw(DomainError())
     θ2 > π/2 && throw(DomainError())
-    ind_first = searchsortedfirst(polim.cl.ρ²sort, polim.cl.fθR(θ1)^2)
-    ind_last = searchsortedlast(polim.cl.ρ²sort, polim.cl.fθR(θ2)^2) 
+    ind_first = searchsortedfirst(polim.cl.ρ²sort, polim.cl.fθρ(θ1)^2)
+    ind_last = searchsortedlast(polim.cl.ρ²sort, polim.cl.fθρ(θ2)^2) 
     PolarPixels{eltype(polim.img), typeof(polim.img)}(ind_first, ind_last, polim)
 end
 

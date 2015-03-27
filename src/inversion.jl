@@ -25,7 +25,7 @@ function millersimple(polim::PolarImage, thresh::Real)
     #for faster gapfraction, convert thresh type before loop
     threshT = convert(eltype(polim), thresh) 
     #define inverse function for ρ²
-    fρ²θ(ρ²) = polim.cl.fρ→θ(sqrt(ρ²)) 
+    fρ²θ(ρ²) = polim.cl.fρθ(sqrt(ρ²)) 
     for (ρ², ϕ, px) in rings(polim)
         θ = fρ²θ(ρ²) 
         dθ = θ - prevθ
@@ -43,7 +43,7 @@ function millergroup(polim::PolarImage, group::Integer, thresh::Real)
     count = 0
     pixs = eltype(polim)[]
     avgθ = StreamStats.Mean()
-    fρ²θ(ρ²) = polim.cl.fρ→θ(sqrt(ρ²)) 
+    fρ²θ(ρ²) = polim.cl.fρθ(sqrt(ρ²)) 
     #for faster gapfraction, convert thresh type before loop
     threshT = convert(eltype(polim), thresh) 
     for (ρ², ϕ, px) in rings(polim)       
@@ -84,7 +84,7 @@ function millerrings(polim::PolarImage, N::Integer, thresh)
 end
 
 function millerrings(polim::PolarImage, thresh::Real) 
-    Nrings = iceil(polim.cl.fθ→ρ(pi/2) / MILLER_GROUPS)
+    Nrings = iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS)
     millerrings(polim, Nrings, thresh)
 end
 millerrings(polim::PolarImage) = millerrings(polim, threshold(polim))

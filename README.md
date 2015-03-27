@@ -11,7 +11,7 @@ This package introduces the PolarImage type with a few convenient methods to acc
 You construct a PolarImage from a Calibration type and an Image (or in general, a Matrix). For the calibration you need the image size, the coordinates of the lens center and the (inverse) projection function. 
 (The projection function maps polar distance ρ on the image to the zenith angle θ of the scene and is usually not linear.)
 
-    mycameralens = calibrate(width, height, ci, cj, fθ→ρ, fρ→θ)
+    mycameralens = calibrate(width, height, ci, cj, fθρ, fρθ)
     polarimg = PolarImage(img, mycameralens)
 
 You can now construct an iterator to access a specific zenith range, eg between 30⁰ and 60⁰. It will return the pixels on each ring in the range by increasing ρ² in a tuple with a vector of polar angles ϕ and a vector of corresponding pixels.
@@ -26,6 +26,7 @@ If you just want the pixels in a zenith range, `pixels(polarimg, pi/6, pi/3)` wi
 Some methods for automatic thresholding and LAI determination:
 
     thresh = threshold(pixels(polarimg))
+    gf30 = gapfraction(pixels(polarimg, pi/6 - 5/180*pi, pi/6 + 5/180*pi))
     LAI57 = zenith57(polarimg, thresh)
     LAImiller = miller(polarimg, thresh)
     LAIlang = lang(polarimg, thresh)
