@@ -91,6 +91,6 @@ millerrings(polim::PolarImage) = millerrings(polim, threshold(polim))
 
 function lang(polim::PolarImage, thresh::Real) 
     θvals = linspace(LANG_START, LANG_END, LANG_STEPS)
-    Kapprox = Float64[contactfreq(polimg, θ, thresh) for θ = θvals]
+    Kapprox = Float64[contactfreq(polim, θ, thresh) for θ = θvals]
     2*sum(linreg(θvals, Kapprox))
 end
