@@ -1,9 +1,10 @@
 
-const DEF_GROUPS = 10
+const MILLER_GROUPS = 10
 const LANG_START = 25/180*pi
 const LANG_END = 65/180*pi
 const LANG_STEPS = 50
 
+# Constant view angle
 
 function zenith57(polim::PolarImage, thresh::Real; ringwidth=RING_WIDTH)
     G = 0.5 
@@ -13,15 +14,19 @@ function zenith57(polim::PolarImage, thresh::Real; ringwidth=RING_WIDTH)
 end
 zenith57(polim::PolarImage) = zenith57(polim, threshold(polim))
 
+# Miller's formule with constant leaf angel
+
 miller(polim::PolarImage, thresh::Real) = millergroup(polim, tresh)
+miller(polim::PolarImage) = millergroup(polim, threshold(polim))
+
 function millersimple(polim::PolarImage, thresh::Real)
     prevθ = 0.
     s = 0.
     #for faster gapfraction, convert thresh type before loop
     threshT = convert(eltype(polim), thresh) 
     #define inverse function for ρ²
-    fρ²θ(ρ²) = polim.cl.fRθ(sqrt(ρ²)) 
-    for (ρ², ϕ, px) in polim[pi/2]        
+    fρ²θ(ρ²) = polim.cl.fρ→θ(sqrt(ρ²)) 
+    for (ρ², ϕ, px) in rings(polim)
         θ = fρ²θ(ρ²) 
         dθ = θ - prevθ
         P = gapfraction(px, threshT)
@@ -38,10 +43,10 @@ function millergroup(polim::PolarImage, group::Integer, thresh::Real)
     count = 0
     pixs = eltype(polim)[]
     avgθ = StreamStats.Mean()
-    fρ²θ(ρ²) = polim.cl.fRθ(sqrt(ρ²)) 
+    fρ²θ(ρ²) = polim.cl.fρ→θ(sqrt(ρ²)) 
     #for faster gapfraction, convert thresh type before loop
     threshT = convert(eltype(polim), thresh) 
-    for (ρ², ϕ, px) in polim[π/2]        
+    for (ρ², ϕ, px) in rings(polim)       
         count += 1        
         StreamStats.update!(avgθ, fρ²θ(ρ²))
         append!(pixs, px)
@@ -60,8 +65,8 @@ function millergroup(polim::PolarImage, group::Integer, thresh::Real)
     end    
     return(2s)
 end
-millergroup(polim::PolarImage, thresh::Real) = millergroup(polim, DEF_GROUPS, thresh)
-millergroup(polim::PolarImage) = millergroup(polim, DEF_GROUPS, threshold(polim))
+millergroup(polim::PolarImage, thresh::Real) = millergroup(polim, MILLER_GROUPS, thresh)
+millergroup(polim::PolarImage) = millergroup(polim, MILLER_GROUPS, threshold(polim))
 
 function millerrings(polim::PolarImage, N::Integer, thresh)
     rings = linspace(0, π/2, N+1)
@@ -79,7 +84,7 @@ function millerrings(polim::PolarImage, N::Integer, thresh)
 end
 
 function millerrings(polim::PolarImage, thresh::Real) 
-    Nrings = iceil(polim.cl.fθR(pi/2) / DEF_GROUPS)
+    Nrings = iceil(polim.cl.fθ→ρ(pi/2) / MILLER_GROUPS)
     millerrings(polim, Nrings, thresh)
 end
 millerrings(polim::PolarImage) = millerrings(polim, threshold(polim))

@@ -9,8 +9,8 @@ type CameraLens
     size2::Uint32 #number of columns in picture (width)
     ci::Uint32    #lens center is located at image[ci,cj]
     cj::Uint32
-    fθR::Function           #projection function θ->pixels (θ in [0,π/2])
-    fRθ::Function           #inverse projection function pixels->θ
+    fθ→ρ::Function           #projection function θ->ρ (θ in [0,π/2], ρ in pixels)
+    fρ→θ::Function           #inverse projection function pixels->θ
     #ρ²::Array{Uint32,2}     #squared distance to center for each point
     #ϕ::Array{Float64,2}     #azimuth angle [-π,π]
     sort_ind::Vector{Int}   #indices to sort according to ρ², then ϕ
@@ -21,7 +21,7 @@ type CameraLens
 end
 
 # CameraLens constructor function
-function calibrate(size1, size2, ci, cj, fθR, fRθ)
+function calibrate(size1, size2, ci, cj, fθ→ρ, fρ→θ)
     size1 < 0 && error(BoundsError())
     size2 < 0 && error(BoundsError())
     cj < 0 && error(BoundsError())
@@ -39,7 +39,7 @@ function calibrate(size1, size2, ci, cj, fθR, fRθ)
 
     ind = sortperm(reshape(ρ²+ϕ/10, length(ρ²)))
     ρ²sort = ρ²[ind]
-    Rmax = fθR(π/2)
+    Rmax = fθ→ρ(π/2)
     indmax = searchsortedlast(ρ²sort, Rmax^2)
     ρ²sort = ρ²sort[1:indmax]
     ind = ind[1:indmax]
@@ -48,7 +48,7 @@ function calibrate(size1, size2, ci, cj, fθR, fRθ)
     ρ²unique = unique(ρ²sort)
     _,ρ²N = hist(ρ²sort, unique(ρ²sort))
     ρ²Ncs = cumsum(prepend!(ρ²N, [1])) #add center b/c falls outside first bin 
-    CameraLens(uint32(size1),uint32(size2), uint32(ci),uint32(cj),fθR,fRθ,ind,ρ²sort,ϕsort,ρ²unique,ρ²Ncs)
+    CameraLens(uint32(size1),uint32(size2), uint32(ci),uint32(cj),fθ→ρ,fρ→θ,ind,ρ²sort,ϕsort,ρ²unique,ρ²Ncs)
 end
 
 # generic constructor for testing
@@ -56,7 +56,7 @@ function gencalibrate(M::AbstractMatrix)
     size1, size2 = size(M)
     ci,cj = iceil(size1/2), iceil(size2/2) #center point
     Rmax = min(ci, cj, size2-ci, size2-cj) 
-    fθR(θ) = θ / (π/2) * Rmax
-    fRθ(R) = R / Rmax * π/2
-    CameraLens(size1, size2, ci, cj, fθR, fRθ)
+    fθ→ρ(θ) = θ / (π/2) * Rmax
+    fρ→θ(R) = R / Rmax * π/2
+    CameraLens(size1, size2, ci, cj, fθ→ρ, fρ→θ)
 end

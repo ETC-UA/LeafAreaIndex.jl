@@ -12,14 +12,18 @@ end
 function PolarRings(polim::PolarImage, θ1::Real, θ2::Real)
     θ1 < 0 && throw(DomainError())        
     θ2 > π/2 && throw(DomainError())
+    θ2 < θ1 && error("θ2 < θ1")
     ind_first = searchsortedfirst(polim.cl.ρ²unique, polim.cl.fθR(θ1)^2) 
     ind_last = searchsortedlast(polim.cl.ρ²unique, polim.cl.fθR(θ2)^2) 
     ind = [0, polim.cl.ρ²Ncs] #add 0 for start of first range
     PolarRings{eltype(polim.img),typeof(polim.img)}(polim, ind_first, ind_last, ind)
 end
+
 # Defining start, done and next methods will make PolarRings an iterator
 Base.start(pr::PolarRings) = pr.ind_first
+
 Base.done(pr::PolarRings, i) = i == pr.ind_last+1
+
 function Base.next(pr::PolarRings, i) 
     vecstart = pr.ind[i]+1
     vecend = pr.ind[i+1]
@@ -28,5 +32,7 @@ function Base.next(pr::PolarRings, i)
     pixs = pr.polim.imgsort[vecstart:vecend]
     ((ρ²,ϕvec, pixs), i+1)
 end
-getindex(polim::PolarImage, θ1::Real, θ2::Real) = PolarRings(polim,θ1,θ2)
-getindex(polim::PolarImage, θ::Real,) = PolarRings(polim, zero(θ),θ)
+
+rings(polim::PolarImage, θ1::Real, θ2::Real) = PolarRings(polim, θ1, θ2)
+rings(polim::PolarImage, θ::Real) = PolarRings(polim, zero(θ), θ)
+rings(polim::PolarImage) = PolarRings(polim, pi/2)
