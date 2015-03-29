@@ -19,3 +19,37 @@ function RidlerCalvard(gray)
     end
     return(thresh)
 end
+
+function RidlerCalvard2(gray)
+    max_iter = 100
+    tol = 1e-6
+
+    thresh = mean(gray)
+    count = 1
+
+    # single pass over input without temporary arrays
+    function highlowmean(gray, thresh)
+        lowmean = highmean = zero(thresh)
+        lowcount = highcount = 0
+        @inbounds for i = 1:length(gray)
+            grayi = gray[i]
+            if gray[i] > thresh
+                lowmean += grayi
+                lowcount += 1
+            else
+                highmean += grayi
+                highcount += 1
+            end
+        highmean/highcount, lowmean/lowcount
+    end
+
+    while count < max_iter        
+        high, low  = highlowmean(gray, thresh)
+        low = mean(gray[~whites])
+        thresh_old = thresh
+        thresh = (high + low)/2
+        abs(thresh - thresh_old) < tol && break
+        count += 1
+    end
+    return(thresh)
+end
