@@ -32,13 +32,12 @@ function RidlerCalvardfast(gray)
     function highlowmean(gray, thresh)
         lowmean = highmean = zero(thresh)
         lowcount = highcount = 0
-        @inbounds for i = 1:length(gray)
-            grayi = gray[i]
-            if gray[i] > thresh
-                lowmean += grayi
+        for pixel in gray            
+            if pixel < thresh
+                lowmean += pixel
                 lowcount += 1
             else
-                highmean += grayi
+                highmean += pixel
                 highcount += 1
             end
         end
