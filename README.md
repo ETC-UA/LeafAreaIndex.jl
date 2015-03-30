@@ -23,6 +23,8 @@ You can now construct an iterator to access a specific zenith range, eg between 
 
 If you just want the pixels in a zenith range, `pixels(polarimg, pi/6, pi/3)` will return a vector with pixels faster. A shortcut `pixels(polarimg)` is translated to `pixels(polarimg, 0, pi/2)`.
 
+The segments function can further splits these ring pixels in n segments (eg. for clumping calculation). It returns a vector with n elements, each a vector with segment pixels.
+
 Some methods for automatic thresholding and LAI determination:
 
     thresh = threshold(pixels(polarimg))
@@ -30,6 +32,9 @@ Some methods for automatic thresholding and LAI determination:
     LAI57 = zenith57(polarimg, thresh)
     LAImiller = miller(polarimg, thresh)
     LAIlang = lang(polarimg, thresh)
+    seg = segments(polim, 55/180*pi, 60/180*pi, 8)
+    seg_gapfr = Float64[LAI.gapfraction(seg[i], thresh) for i = 1:length(seg)]
+    clump_LX = log(mean(seg_gapfr)) / mean(log(seg_gapfr))
 
 This package is in full development. Please feel free to submit any issue through the issue tracker. Code suggestions are very much appreciated through a pull request.
 

@@ -2,15 +2,16 @@
 threshold(gray) = RidlerCalvard(gray)
 threshold(polim::PolarImage) = threshold(pixels(polim))
 
+# adopted with permission from Jason Merrill.
 function RidlerCalvard(gray)
     max_iter = 100
     tol = 1e-6
 
-    @show thresh = mean(gray)
+    thresh = mean(gray)
     count = 1
 
     # Single pass over input for both high and low mean is
-    # almost 5 times faster if no temporary array allocation.
+    # almost 5 times faster because no temporary array allocation.
     function highlowmean(gray, thresh)
         lowmean = highmean = zero(thresh)
         lowcount = highcount = 0

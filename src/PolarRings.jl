@@ -28,8 +28,8 @@ function Base.next(pr::PolarRings, i)
     vecstart = pr.ind[i]+1
     vecend = pr.ind[i+1]
     ρ² = pr.polim.cl.ρ²unique[i]
-    ϕvec = pr.polim.cl.ϕsort[vecstart:vecend]
-    pixs = pr.polim.imgsort[vecstart:vecend]
+    ϕvec = sub(pr.polim.cl.ϕsort,vecstart:vecend)
+    pixs = sub(pr.polim.imgsort, vecstart:vecend)
     ((ρ²,ϕvec, pixs), i+1)
 end
 
