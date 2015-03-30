@@ -23,7 +23,7 @@ You can now construct an iterator to access a specific zenith range, eg between 
 
 If you just want the pixels in a zenith range, `pixels(polarimg, pi/6, pi/3)` will return a vector with pixels faster. A shortcut `pixels(polarimg)` is translated to `pixels(polarimg, 0, pi/2)`.
 
-The segments function can further splits these ring pixels in n segments (eg. for clumping calculation). It returns a vector with n elements, each a vector with segment pixels.
+The `segments` function can further splits these ring pixels in n segments (eg. for clumping calculation). It returns a vector with n elements, each a vector with segment pixels.
 
 Some methods for automatic thresholding and LAI determination:
 
