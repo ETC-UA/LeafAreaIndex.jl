@@ -1,11 +1,10 @@
 module LeafAreaIndex
 
-import FixedPointNumbers
-import StreamStats
+import FixedPointNumbers, StreamStats, ArrayViews
 
 using Lexicon
 
-export calibrate, PolarImage, pixels, gapfraction, contactfreq,
+export calibrate, PolarImage, pixels, gapfraction, contactfreq, threshold,
         zenith57, miller, lang
 
 # default ring width for zenith57 and contactfreq
