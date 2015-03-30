@@ -25,7 +25,7 @@ Base.length(pc::PolarPixels) = pc.ind_last - pc.ind_first + 1
 Base.endof(pc::PolarPixels) = pc.polim.imgsort[pc.ind_last]
 #pixels{T,A}(polim::PolarImage{T,A}, θ1::Real, θ2::Real) = collect(T, PolarPixels(polim,θ1,θ2))
 
-using ArrayViews
+
 
 # for just polar distance, returning a view is sufficient and much faster
 function pixels(polim::PolarImage, θ1::Real, θ2::Real) 
@@ -33,7 +33,7 @@ function pixels(polim::PolarImage, θ1::Real, θ2::Real)
     θ2 > π/2 && throw(DomainError())
     ind_first = searchsortedfirst(polim.cl.ρ²sort, polim.cl.fθρ(θ1)^2)
     ind_last = searchsortedlast(polim.cl.ρ²sort, polim.cl.fθρ(θ2)^2) 
-	view(polim.imgsort, ind_first:ind_last)
+	ArrayViews.view(polim.imgsort, ind_first:ind_last)
 end
 
 pixels(polim::PolarImage, θ::Real) = pixels(polim, zero(θ), θ)
