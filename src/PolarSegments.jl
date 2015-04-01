@@ -16,27 +16,3 @@ function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
     end
     segmvec
 end
-
-function spiral(cl::CameraLens)
-    ρmax = cl.fθρ(π/2)
-    #ρ²Ncs = cl.ρ²Ncs
-    ρ²sort = cl.ρ²sort
-    ϕsort = cl.ϕsort
-    ind_prev = 1
-    spiralind = Int[]
-    ρ²spiralind = Int[]
-    ind = 0
-    for ρ² in [1:ρmax].^2
-        #TODO improve by searching ρ²unique and taking index from ρ²Ncs
-        ind = searchsortedfirst(ρ²sort, ρ²)
-        ρ²spiralind = sortperm(ArrayViews.view(ϕsort, ind_prev:ind-1))
-        append!(spiralind, ind_prev - 1 + ρ²spiralind)
-        ind_prev = ind
-    end
-    # last circle of spiral
-    ρ²spiralind = sortperm(ϕsort[ind_prev:end])
-    append!(spiralind, ind_prev - 1 + ρ²spiralind)
-    
-    length(unique(spiralind)) == length(ϕsort) || error("length check")
-    return(spiralind)
-end

@@ -2,7 +2,8 @@ module LeafAreaIndex
 
 import FixedPointNumbers, StreamStats, ArrayViews
 
-using Lexicon
+VERSION < v"0.4-" && using Docile
+@docstrings
 
 export calibrate, PolarImage, pixels, gapfraction, contactfreq, threshold,
         zenith57, miller, lang
