@@ -39,8 +39,8 @@ function calibrate(size1, size2, ci, cj, fθρ, fρθ)
 
     ind = sortperm(reshape(ρ²+ϕ/10, length(ρ²)))
     ρ²sort = ρ²[ind]
-    Rmax = fθρ(π/2)
-    indmax = searchsortedlast(ρ²sort, Rmax^2)
+    ρmax = fθρ(π/2)
+    indmax = searchsortedlast(ρ²sort, ρmax^2)
     ρ²sort = ρ²sort[1:indmax]
     ind = ind[1:indmax]
     ϕsort = ϕ[ind]
