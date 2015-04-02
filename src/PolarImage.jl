@@ -19,5 +19,5 @@ end
 genPolarImage(M) = PolarImage(M, gencalibrate(M))
 
 Base.eltype{T}(polim::PolarImage{T}) = T
-Base.length(pm::PolarImage) = pm.cl.ρ²Ncs[end]
+Base.length(pm::PolarImage) = int(pm.cl.ρ²Ncs[end])
 

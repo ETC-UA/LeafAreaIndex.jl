@@ -21,8 +21,8 @@ end
 
 function gaplengths(polim::PolarImage, thresh, θ1::Real, θ2::Real)
 	@checkθ1θ2
-	θ1ind = searchsortedfirst(polim.cl.ρ²unique, polim.cl.fθρ(θ1)^2) 
-    θ2ind = searchsortedlast(polim.cl.ρ²unique, polim.cl.fθρ(θ2)^2) 
+	θ1ind = searchsortedfirst(polim.cl.ρ²sort, polim.cl.fθρ(θ1)^2) 
+    θ2ind = searchsortedlast(polim.cl.ρ²sort, polim.cl.fθρ(θ2)^2) 
 	
     threshT = convert(eltype(PolarImage), thresh)
     λ = 0
