@@ -27,5 +27,6 @@ include("thresholding.jl")
 include("gapfraction.jl")
 include("inversion.jl")
 include("clumping.jl")
+include("ChenCihlar.jl")
 
 end # module
