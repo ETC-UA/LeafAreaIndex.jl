@@ -1,6 +1,6 @@
 module LeafAreaIndex
 
-import FixedPointNumbers, StreamStats, ArrayViews
+import FixedPointNumbers, StreamStats, ArrayViews, Debug, Memoize
 
 VERSION < v"0.4-" && using Docile
 @docstrings
