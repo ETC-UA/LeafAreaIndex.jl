@@ -11,10 +11,3 @@ end
 function langxiang45(polim::PolarImage, thresh, θ1::Real, θ2::Real)
 	langxiang(polim, thresh, θ1, θ2, 8)
 end
-
-# function langxiang45(polim::PolarImage, θ1::Real, θ2::Real)
-#     @checkθ1θ2
-#     thresh = threshold(polim)
-#     langxiang45(thresh, polim, θ1, θ2)
-# end
-
