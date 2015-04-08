@@ -19,6 +19,7 @@ macro checkθ1θ2()
 end
 
 include("CameraLens.jl")
+include("Slope.jl")
 include("PolarImage.jl")
 include("PolarRings.jl")
 include("PolarPixels.jl")
