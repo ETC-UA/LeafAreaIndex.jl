@@ -67,7 +67,6 @@ Memoize.@memoize function Wp_estimation(polim::PolarImage, thresh;
     
     @checkθ1θ2
     gaps = gaplengths(polim, thresh, θ1, θ2)
-    pixs = pixels(polim, θ1, θ2)
     Wp =  Wp_estimation(probeprob(gaps); n=Wp_est_n)
 end
 function Wp_estimation(P; n=WP_EST_N)
@@ -126,8 +125,10 @@ function chencihlarP(polim::PolarImage, thresh, θ1::Real, θ2::Real;n=WP_EST_N)
     maxP = length(Pl)
     n = min(n, maxP)
     Leθ = -linreg([1.:n], log(Pl[1:n]))[1]
+
     Pstart = ifloor(maxP/4)
     Pstop = ifloor(maxP/3)
+    
     Lcθ = -linreg(float([Pstart:Pstop]), log(Pl[Pstart:Pstop]))[1]
     α = 0
     LEp = log((1+α)*Lcθ*exp(-Lcθ)/(sqrt(2(1+α)exp(-(Leθ+Lcθ))-(1+2α)exp(-2Lcθ))-exp(-Lcθ)))
