@@ -6,7 +6,7 @@ VERSION < v"0.4-" && using Docile
 @docstrings
 
 export calibrate, PolarImage, pixels, gapfraction, contactfreq, threshold,
-        zenith57, miller, lang
+        zenith57, miller, lang, langxiang45
 
 # default ring width for zenith57 and contactfreq
 const RING_WIDTH = 5/180*π
