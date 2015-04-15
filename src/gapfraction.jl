@@ -5,11 +5,11 @@ Ufixed = FixedPointNumbers.Ufixed
 gapfraction(pixs, thresh) = mean(pixs .> thresh)
 
 #in general specialize on type of input array
-gapfraction(pixs::AbstractArray, thresh)
+function gapfraction(pixs::AbstractArray, thresh)
     threshT = convert(eltype(pixs), thresh)
     gfs = zero(Int)        
     for pix in pixs
-        gfs += pix > thresh
+        gfs += pix > threshT
     end
     return(gfs / length(pixs))
 end
@@ -19,7 +19,7 @@ function gapfraction{T<:Ufixed}(pixs::AbstractArray{T}, thresh)
     threshT = convert(T, thresh)
     gfs = zero(Int)        
     for pix in pixs
-        gfs += pix.i > thresh.i
+        gfs += pix.i > threshT.i
     end
     return(gfs / length(pixs))
 end

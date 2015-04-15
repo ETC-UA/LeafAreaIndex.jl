@@ -6,6 +6,7 @@
 # so ρ² and ϕ only need to be (pre)calculated per camera+lens once.
 # (Note Uint32 sufficient to store ρ²).
 # We assume the lens has at least 180ᵒ field of view.
+# TODO test use immutable instead of type for memory (and speed) improvements
 type CameraLens
     size1::Int #number of rows in picture (heigth)
     size2::Int #number of columns in picture (width)

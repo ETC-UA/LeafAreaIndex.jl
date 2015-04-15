@@ -9,7 +9,7 @@ const LANG_STEPS = 50
 function zenith57(polim::PolarImage, thresh::Real; ringwidth=RING_WIDTH)
     G = 0.5 
     ring = pixels(polim, 1 - ringwidth, 1 + ringwidth)    
-    gf57 = gapfraction(ring, convert(eltype(ring), thresh))
+    gf57 = gapfraction(ring, thresh)
     return( -log(gf57) / G * cos(1))
 end
 zenith57(polim::PolarImage) = zenith57(polim, threshold(polim))
