@@ -1,9 +1,12 @@
 ## CameraLens ##
 
 # Type including distance to center ρ and polar angle ϕ for each pixel.
+# Useful for quickly accessing polar rings and segments.
 # This is Camera + Lens dependent, but it's the same for each of its pictures, 
 # so ρ² and ϕ only need to be (pre)calculated per camera+lens once.
 # (Note Uint32 sufficient to store ρ²).
+# We assume the lens has at least 180ᵒ field of view.
+# TODO test use immutable instead of type for memory (and speed) improvements
 type CameraLens
     size1::Int #number of rows in picture (heigth)
     size2::Int #number of columns in picture (width)
@@ -15,18 +18,20 @@ type CameraLens
     #ϕ::Array{Float64,2}     #azimuth angle [-π,π]
     sort_ind::Vector{Int}   #indices to sort according to ρ², then ϕ
     spiral_ind::Vector{Int} #indices to sort according to spiral: ρ² per pixel width, then ϕ
-    ρ²sort::Vector{Uint32}  #ρ²
+    ρ²sort::Vector{Uint32}  #ρ² sorted by sort_ind
     ϕsort::Vector{Float64}  #ϕ sorted by sort_ind
     ρ²unique::Vector{Uint32}#unique elements of ρ²
-    ρ²Ncs::Vector{Uint32}   #cumsum of occurrences of each ρ²unique in ρ²
+    ρ²Ncs::Vector{Uint32}   #cumsum of occurrences of each ρ²unique in ρ², for ρ²sort index ranges
 end
 
 # CameraLens constructor function
-function calibrate(size1, size2, ci, cj, fθρ, fρθ)
+function calibrate(size1, size2, ci::Int, cj::Int, fθρ, fρθ)
     size1 < 0 && error(BoundsError())
     size2 < 0 && error(BoundsError())
-    cj < 0 && error(BoundsError())
     ci < 0 && error(BoundsError())
+    cj < 0 && error(BoundsError())    
+
+    # TODO add warning/error if (ci,cj) far away from pic center
 
     ρ² = zeros(Uint32, size1, size2)
     ϕ = zeros(Float64, size1, size2)
@@ -54,6 +59,7 @@ function calibrate(size1, size2, ci, cj, fθρ, fρθ)
 
     # spiral indices: combine ρ² for single pixel width and then sort on ϕ.
     # Assumes implicitely an offset of -π, where spiral jumps to next ring.
+    # Used for gap lengths for clumping.
     spiralind = similar(ind)
     ρ²spiralind = Int[]
     ind_prev = 1
