@@ -24,10 +24,8 @@ function gapfraction{T<:Ufixed}(pixs::AbstractArray{T}, thresh)
     return(gfs / length(pixs))
 end
 
-function contactfreq(polim::PolarImage, θ, thresh; ringwidth=RING_WIDTH)
-    θ < 0   && throw(DomainError())
-    θ > π/2 && throw(DomainError())
-    pixs = pixels(polim, max(0, θ-ringwidth), min(pi/2, θ+ringwidth))
-    P = gapfraction(pixs, thresh)
-    return(-log(P) * cos(θ))
+function loggapfraction(pixs, thresh)
+    gf = gapfraction(pixs, thresh)
+    gf == zero(gf) && return(log(1/length(pixs)))
+    log(gf)
 end

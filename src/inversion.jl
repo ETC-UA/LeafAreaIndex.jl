@@ -9,8 +9,8 @@ const LANG_STEPS = 50
 function zenith57(polim::PolarImage, thresh::Real; ringwidth=RING_WIDTH)
     G = 0.5 
     ring = pixels(polim, 1 - ringwidth, 1 + ringwidth)    
-    gf57 = gapfraction(ring, thresh)
-    return( -log(gf57) / G * cos(1))
+    loggf57 = loggapfraction(ring, thresh)
+    return( -loggf57 / G * cos(1))
 end
 zenith57(polim::PolarImage) = zenith57(polim, threshold(polim))
 
@@ -22,16 +22,14 @@ miller(polim::PolarImage) = millergroup(polim, threshold(polim))
 function millersimple(polim::PolarImage, thresh::Real)
     prevθ = 0.
     s = 0.
-    #for faster gapfraction, convert thresh type before loop
-    threshT = convert(eltype(polim), thresh) 
+    
     #define inverse function for ρ²
     fρ²θ(ρ²) = polim.cl.fρθ(sqrt(ρ²)) 
     for (ρ², ϕ, px) in rings(polim)
         θ = fρ²θ(ρ²) 
         dθ = θ - prevθ
-        P = gapfraction(px, threshT)
-        logP = ifelse(P == zero(P), log(1/length(pixs)), log(P))
-        s -= logP  * cos(θ) * sin(θ) * dθ)
+        logP = loggapfraction(px, thresh)        
+        s -= logP  * cos(θ) * sin(θ) * dθ
         prevθ = θ
     end
     return(2s)
@@ -56,9 +54,8 @@ function millergroup(polim::PolarImage, group::Integer, thresh::Real)
         if count == group
             θ = StreamStats.state(avgθ)
             dθ = θ - prevθ
-            P = gapfraction(pixs, thresh)
-            logP = ifelse(P == zero(P), log(1/length(pixs)), log(P))
-            s -= logP * cos(θ) * sin(θ) * dθ)        
+            logP = loggapfraction(pixs, thresh)            
+            s -= logP * cos(θ) * sin(θ) * dθ
             
             prevθ = θ
             count = 0
@@ -77,10 +74,9 @@ function millerrings(polim::PolarImage, N::Integer, thresh)
     s = 0.
     for i = 1:N
         px = pixels(polim, rings[i], rings[i+1])
-        P = gapfraction(px, thresh)
-        θ = i * dθ - dθ/2
-        logP = ifelse(P == zero(P), log(1/length(px)), log(P))
-        s -=  logP * cos(θ) * sin(θ) * dθ)  
+        logP = loggapfraction(px, thresh)
+        θ = i * dθ - dθ/2        
+        s -=  logP * cos(θ) * sin(θ) * dθ
     end
     return(2s)
 end

@@ -1,7 +1,7 @@
 ## PolarRings ##
 
 # We create an extra type PolarRings to iterate over pixels with increasing ρ.
-# Each iteration outputs a tuple (ρ²,pixels::Vector{eltype(polim.data)})
+# Each iteration outputs a tuple (ρ²,ϕ,pixels::Vector{eltype(polim.data)})
 type PolarRings{T,A}
     polim::PolarImage{T,A}
     ind_first::Int
