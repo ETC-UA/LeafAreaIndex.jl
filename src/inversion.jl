@@ -30,22 +30,24 @@ function millersimple(polim::PolarImage, thresh::Real)
         θ = fρ²θ(ρ²) 
         dθ = θ - prevθ
         P = gapfraction(px, threshT)
-        s -= ifelse(P==0., 0., log(P) * cos(θ) * sin(θ) * dθ)
+        logP = ifelse(P == zero(P), log(1/length(pixs)), log(P))
+        s -= logP  * cos(θ) * sin(θ) * dθ)
         prevθ = θ
     end
     return(2s)
 end
 millersimple(polim::PolarImage) = millersimple(polim, threshold(polim))
 
+# group a number of consecutive ρ²-rings together and then integrate
+# dθ is incorrect for first and last, but the cos or sin will eliminate this term.
 function millergroup(polim::PolarImage, group::Integer, thresh::Real)
     s = 0.    
     prevθ = 0.
     count = 0
     pixs = eltype(polim)[]
     avgθ = StreamStats.Mean()
+    # lens projection function from ρ² to θ
     fρ²θ(ρ²) = polim.cl.fρθ(sqrt(ρ²)) 
-    #for faster gapfraction, convert thresh type before loop
-    threshT = convert(eltype(polim), thresh) 
     for (ρ², ϕ, px) in rings(polim)       
         count += 1        
         StreamStats.update!(avgθ, fρ²θ(ρ²))
@@ -54,8 +56,9 @@ function millergroup(polim::PolarImage, group::Integer, thresh::Real)
         if count == group
             θ = StreamStats.state(avgθ)
             dθ = θ - prevθ
-            P = gapfraction(pixs, threshT)            
-            s -= ifelse(P==0., 0., log(P) * cos(θ) * sin(θ) * dθ)        
+            P = gapfraction(pixs, thresh)
+            logP = ifelse(P == zero(P), log(1/length(pixs)), log(P))
+            s -= logP * cos(θ) * sin(θ) * dθ)        
             
             prevθ = θ
             count = 0
@@ -72,13 +75,12 @@ function millerrings(polim::PolarImage, N::Integer, thresh)
     rings = linspace(0, π/2, N+1)
     dθ = π/2/N
     s = 0.
-    #for faster gapfraction, convert thresh type before loop
-    threshT = convert(eltype(polim), thresh) 
     for i = 1:N
         px = pixels(polim, rings[i], rings[i+1])
-        P = gapfraction(px, threshT)
+        P = gapfraction(px, thresh)
         θ = i * dθ - dθ/2
-        s -= ifelse(P==0., 0., log(P) * cos(θ) * sin(θ) * dθ)  
+        logP = ifelse(P == zero(P), log(1/length(px)), log(P))
+        s -=  logP * cos(θ) * sin(θ) * dθ)  
     end
     return(2s)
 end
