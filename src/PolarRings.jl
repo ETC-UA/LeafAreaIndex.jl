@@ -14,7 +14,8 @@ function PolarRings(polim::PolarImage, θ1::Real, θ2::Real)
     θ2 > π/2 && throw(DomainError())
     θ2 < θ1 && error("θ2 < θ1")
     ind_first = searchsortedfirst(polim.cl.ρ²unique, polim.cl.fθρ(θ1)^2) 
-    ind_last = searchsortedlast(polim.cl.ρ²unique, polim.cl.fθρ(θ2)^2) 
+    ind_last = searchsortedlast(polim.cl.ρ²unique, polim.cl.fθρ(θ2)^2)
+    # TODO use ChainedVectors or something similar to avoid allocation
     ind = [0, polim.cl.ρ²Ncs] #add 0 for start of first range
     PolarRings{eltype(polim.img),typeof(polim.img)}(polim, ind_first, ind_last, ind)
 end
