@@ -65,16 +65,16 @@ function millergroup(polim::PolarImage, group::Integer, thresh::Real)
     prevθ = 0.
     count = 0
     pixs = eltype(polim)[]
-    avgθ = StreamStats.Mean()
+    avgθ = StreamMean()
     # lens projection function from ρ² to θ
     fρ²θ(ρ²) = polim.cl.fρθ(sqrt(ρ²)) 
     for (ρ², ϕ, px) in rings(polim)       
         count += 1        
-        StreamStats.update!(avgθ, fρ²θ(ρ²))
+        avgθ = update(avgθ, fρ²θ(ρ²))
         append!(pixs, px)
         
         if count == group
-            θ = StreamStats.state(avgθ)
+            θ = mean(avgθ)
             dθ = θ - prevθ
             logP = loggapfraction(pixs, thresh)            
             s -= logP * cos(θ) * sin(θ) * dθ

@@ -4,6 +4,8 @@ threshold(polim::PolarImage) = threshold(pixels(polim))
 
 ##
 ## Ridler Calvard method
+##
+
 # adopted with permission from Jason Merrill for MIT license
 function RidlerCalvard(gray)
     max_iter = 100
@@ -39,82 +41,63 @@ function RidlerCalvard(gray)
     return(thresh)
 end
 
-# Specialized function for Ufixed for fast threshold comparison
-# FixedPointNumbers.Ufixed has value field i with integer value
-function edgefoptim{T<:FixedPointNumbers.Ufixed}(im::Array{T}, th)    
-    t = convert(T, th)
-    s = StreamStats.Mean()
-    
-    # work with dequeues for speed, using push! and shift!
-    imq = im[:,1]
-    thq = Bool[k.i < t.i for k in imq]
-        
-    for j = 2:size(im,2)
-        # p stands for pixel, b for boolean
-        prevp = im[1,j]
-        prevb = prevp.i < t.i
-        upp = shift!(imq)        
-        upb = shift!(thq)
-        for i = 2:size(im,1)
-            p = im[i,j]
-            b = p.i < t.i
-            leftp = shift!(imq)
-            leftb = shift!(thq)
-            
-            b != upb && StreamStats.update!(s, abs(p - upp))
-            upb != prevb && StreamStats.update!(s, abs(upp - prevp))
-            upb != leftb && StreamStats.update!(s, abs(upp - leftp))
-            leftb != prevb && StreamStats.update!(s, abs(leftp - prevp))
-            
-            push!(imq, prevp)
-            push!(thq, prevb)
-            prevp, prevb = p, b
-            upp, upb = leftp, leftb
-        end
-        push!(imq, prevp)
-        push!(thq, prevb)
-    end
-    StreamStats.state(s)/2
-end
 
 ##
 ## Edge detection method
-# General version of the optimization function for edge detection
-function edgefoptim(im, th)    
+##
+
+# Specialized type for fast circular queue
+type circqueue{T}
+    array::Vector{T}
+    len::Int
+    index::Int
+end
+circqueue(A::AbstractVector) = circqueue{eltype(A)}(A, length(A), 1)
+function pushshift!{T}(f::circqueue{T}, input::T)
+    ind = f.index
+    output = f.array[ind]
+    f.array[ind] = input
+    if ind == f.len
+        f.index = 1
+    else
+        f.index += 1
+    end    
+    output
+end
+
+# optimization function for edge detection
+function edgefoptim(im, th)        
     t = convert(eltype(im), th)
-    s = StreamStats.Mean()
+    s = StreamMean()
     
-    # work with dequeues for speed, using push! and shift!
-    imq = im[:,1]
-    thq = im[:,1] .< t
+    # We cache the first row and then 
+    # work with circular dequeues for speed, using pushshift!
+    imq = circqueue(im[:,1])
+    thq = circqueue(im[:,1] .< t)
         
     for j = 2:size(im,2)
         # p stands for pixel, b for boolean; 
         #`prev` is one up, `up` is upper left, `left` is one left.
         prevp = im[1,j]
         prevb = prevp < t
-        upp = shift!(imq)        
-        upb = shift!(thq)
+        upp = pushshift!(imq, prevp)        
+        upb = pushshift!(thq, prevb)
         for i = 2:size(im,1)
             p = im[i,j]
             b = p < t
-            leftp = shift!(imq)
-            leftb = shift!(thq)
+            leftp = pushshift!(imq, p)
+            leftb = pushshift!(thq, b)
             
-            b != upb && StreamStats.update!(s, abs(p - upp))
-            upb != prevb && StreamStats.update!(s, abs(upp - prevp))
-            upb != leftb && StreamStats.update!(s, abs(upp - leftp))
-            leftb != prevb && StreamStats.update!(s, abs(leftp - prevp))
+            if b != upb; s = update(s, abs(p - upp)); end
+            if upb != prevb; s = update(s, abs(upp - prevp)); end
+            if upb != leftb; s = update(s, abs(upp - leftp)); end
+            if leftb != prevb; s = update(s, abs(leftp - prevp)); end
             
-            push!(imq, prevp)
-            push!(thq, prevb)
             prevp, prevb = p, b
             upp, upb = leftp, leftb
         end
-        push!(imq, prevp)
-        push!(thq, prevb)
     end
-    StreamStats.state(s)/2
+    mean(s)/2
 end
 
 function edge_threshold(gray)
@@ -123,11 +106,22 @@ function edge_threshold(gray)
     res.minimum
 end
 
-# TODO cut out box around fθρ(π/2) for polarimage argument
-#function edge_threshold(polim::PolarImage)
+# Cut out box around fθρ(π/2) to reduce for polarimage argument
+function edge_threshold(polim::PolarImage)
+    Rmax = iceil(polim.cl.fθρ(π/2))
+    ci = polim.cl.ci
+    cj = polim.cl.cj
+    rowmin = max(1, ci - Rmax)
+    rowmax = min(polim.cl.size1, ci + Rmax)
+    colmin = max(1, cj - Rmax)
+    colmax = min(polim.cl.size2, cj + Rmax)
+    edge_threshold(polim.img[rowmin:rowmax, colmin:colmax])
+end
 
 ##
 ## Minimum method
+##
+
 # a fast histogram method derived from julialang PR #8952 
 function fasthist(img::AbstractVector, edg::Range)    
     n = length(edg) - 1

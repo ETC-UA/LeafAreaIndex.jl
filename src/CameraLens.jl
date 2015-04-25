@@ -6,7 +6,6 @@
 # so ρ² and ϕ only need to be (pre)calculated per camera+lens once.
 # (Note Uint32 sufficient to store ρ²).
 # We assume the lens has at least 180ᵒ field of view.
-# TODO test use immutable instead of type for memory (and speed) improvements
 immutable CameraLens
     size1::Int #number of rows in picture (heigth)
     size2::Int #number of columns in picture (width)
@@ -53,7 +52,7 @@ function calibrate(size1, size2, ci::Int, cj::Int, fθρ, fρθ)
     ϕsort = ϕ[ind]
 
     ρ²unique = unique(ρ²sort)
-    # TODO check if faster to use `StatsBase.mapcount` instead of `hist`
+    # TODO use fasthist from 'thresholding.jl", although most time spent in `sortperm` above.
     _,ρ²N = hist(ρ²sort, unique(ρ²sort))
     ρ²Ncs = cumsum(prepend!(ρ²N, [1])) #add center b/c falls outside first bin 
 
