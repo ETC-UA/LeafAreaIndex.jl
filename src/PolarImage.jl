@@ -28,5 +28,5 @@ aspect(polim::PolarImage) = aspect(polim.slope)
 genPolarImage(M) = PolarImage(M, gencalibrate(M))
 
 Base.eltype{T}(polim::PolarImage{T}) = T
-Base.length(pm::PolarImage) = int(pm.cl.ρ²Ncs[end]) #convert from Uint to Int
+Base.length(pm::PolarImage) = length(pm.cl.ρ²sort)
 

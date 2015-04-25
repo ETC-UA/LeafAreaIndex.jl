@@ -10,13 +10,10 @@ type PolarRings{T,A}
 end 
 
 function PolarRings(polim::PolarImage, θ1::Real, θ2::Real)
-    θ1 < 0 && throw(DomainError())        
-    θ2 > π/2 && throw(DomainError())
-    θ2 < θ1 && error("θ2 < θ1")
-    ind_first = searchsortedfirst(polim.cl.ρ²unique, polim.cl.fθρ(θ1)^2) 
-    ind_last = searchsortedlast(polim.cl.ρ²unique, polim.cl.fθρ(θ2)^2)
-    # TODO use ChainedVectors or something similar to avoid allocation
-    ind = [0, polim.cl.ρ²Ncs] #add 0 for start of first range
+    @checkθ1θ2
+    ind_first = searchsortedfirst(polim.cl.ρ²unique_ind, polim.cl.fθρ(θ1)^2) 
+    ind_last = searchsortedlast(polim.cl.ρ²unique_ind, polim.cl.fθρ(θ2)^2)    
+    ind = hcat(polim.cl.ρ²unique_ind, length(polim.cl.sort_ind)) #add end index
     PolarRings{eltype(polim.img),typeof(polim.img)}(polim, ind_first, ind_last, ind)
 end
 
@@ -26,7 +23,7 @@ Base.start(pr::PolarRings) = pr.ind_first
 Base.done(pr::PolarRings, i) = i == pr.ind_last+1
 
 function Base.next(pr::PolarRings, i) 
-    vecstart = pr.ind[i]+1
+    vecstart = pr.ind[i]
     vecend = pr.ind[i+1]
     ρ² = pr.polim.cl.ρ²unique[i]
     ϕvec = sub(pr.polim.cl.ϕsort,vecstart:vecend)

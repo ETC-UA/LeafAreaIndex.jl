@@ -2,15 +2,17 @@
 function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
     @checkθ1θ2
 
-    θ1ind = searchsortedfirst(polim.cl.ρ²unique, polim.cl.fθρ(θ1)^2) 
-    θ2ind = searchsortedlast(polim.cl.ρ²unique, polim.cl.fθρ(θ2)^2) 
-    
+    ρ²indstart = searchsortedfirst(polim.cl.ρ²unique, polim.cl.fθρ(θ1)^2) 
+      ρ²indend =  searchsortedlast(polim.cl.ρ²unique, polim.cl.fθρ(θ2)^2) 
+    indstart = polim.cl.ρ²unique_ind[ρ²indstart]
+      indend = polim.cl.ρ²unique_ind[ρ²indend]
+
     segmvec = [eltype(polim)[] for i = 1:n]
     
     imgsort = polim.imgsort
     ϕsort = polim.cl.ϕsort
-    adj = n/2π
-    @inbounds for ind in polim.cl.ρ²Ncs[θ1ind]:polim.cl.ρ²Ncs[θ2ind]
+    adj = n/2π    
+    @inbounds for ind in indstart:indend
         indn = iceil((ϕsort[ind]+pi)*adj)
         push!(segmvec[indn], imgsort[ind])
     end
