@@ -65,6 +65,7 @@ function pushshift!{T}(f::circqueue{T}, input::T)
     output
 end
 
+
 # optimization function for edge detection
 function edgefoptim(im, th)        
     t = convert(eltype(im), th)

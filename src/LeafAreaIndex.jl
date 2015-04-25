@@ -22,7 +22,7 @@ immutable StreamMean
     len::Int
 end
 StreamMean() = StreamMean(0.,0)
-update(sm::StreamMean, term) = immean(sm.streamsum + term, sm.len+1)
+update(sm::StreamMean, term) = StreamMean(sm.streamsum + term, sm.len+1)
 Base.mean(sm::StreamMean) = sm.streamsum / sm.len
 
 
