@@ -7,8 +7,8 @@ immutable Slope <: SlopeInfo
     # Slope inclination α in radians [0, π/3]
     α::Float64 
     # Aspect ε is the downhill direction relative to the geographic north,
-    # in clockwise direction on a map, i.e. in counter-clockwise direction on 
-    # the picture. In radians [0, 2π]
+    # in clockwise direction on a map (i.e. in counter-clockwise direction on 
+    # the picture). In radians [0, 2π]. Eg pi/2 means downhill to the East.
     ε::Float64 
 end
 
