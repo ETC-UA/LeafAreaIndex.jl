@@ -1,19 +1,17 @@
+const RIDLER_CALVARD_MAX_ITER = 100
+const RIDLER_CALVARD_TOL = 1e-6
 
-threshold(gray) = RidlerCalvard(gray)
-threshold(polim::PolarImage) = threshold(pixels(polim))
+
+threshold(polim::PolarImage) = RidlerCalvard(polim)
+RidlerCalvard(polim::PolarImage) = RidlerCalvard(pixels(polim))
 
 ##
 ## Ridler Calvard method
 ##
 
 # adopted with permission from Jason Merrill for MIT license
-function RidlerCalvard(gray)
-    max_iter = 100
-    tol = 1e-6
-
-    thresh = mean(gray)
-    count = 1
-
+function RidlerCalvard(gray)    
+    
     # Single pass over input for both high and low mean is
     # almost 5 times faster because no temporary array allocation.
     function highlowmean(gray, thresh)
@@ -31,11 +29,14 @@ function RidlerCalvard(gray)
         highmean/highcount, lowmean/lowcount
     end
 
-    while count < max_iter        
+    thresh = mean(gray)
+    count = 1
+
+    while count < RIDLER_CALVARD_MAX_ITER        
         high, low  = highlowmean(gray, thresh)
         thresh_old = thresh
         thresh = (high + low)/2
-        abs(thresh - thresh_old) < tol && break
+        abs(thresh - thresh_old) < RIDLER_CALVARD_TOL && break
         count += 1
     end
     return(thresh)
@@ -65,12 +66,12 @@ function pushshift!{T}(f::circqueue{T}, input::T)
     output
 end
 
-
 # optimization function for edge detection
 function edgefoptim(im, th)        
     t = convert(eltype(im), th)
     s = StreamMean()
-    
+    s = update(s, 0) # in case no edges
+
     # We cache the first row and then 
     # work with circular dequeues for speed, using pushshift!
     imq = circqueue(im[:,1])
@@ -103,7 +104,7 @@ end
 
 function edge_threshold(gray)
     # maximization so use negative sign
-    res = Optim.optimize(x->-edgefoptim(gray, x), 0., 1.)
+    res = Optim.optimize(x->-edgefoptim(gray, x), 0.01, 0.99)
     res.minimum
 end
 
@@ -119,11 +120,12 @@ function edge_threshold(polim::PolarImage)
     edge_threshold(polim.img[rowmin:rowmax, colmin:colmax])
 end
 
+
 ##
 ## Minimum method
 ##
 
-# a fast histogram method derived from julialang PR #8952 
+# A fast histogram method derived from julialang PR #8952.
 function fasthist(img::AbstractVector, edg::Range)    
     n = length(edg) - 1
     histcount = zeros(Int, n)
@@ -136,7 +138,8 @@ function fasthist(img::AbstractVector, edg::Range)
     end
     edg, histcount
 end
-# check if histogram is bimodal by detection change in direction
+
+# Check if histogram is bimodal by detecting change in direction.
 # TODO rewrite with diff 
 function isbimodal(hc) #hc=histcounts    
     prevup = hc[2] > hc[1]

@@ -1,15 +1,18 @@
 # default ring width for zenith57 
 const RING_WIDTH = 5/180*π
-# number of grouped consecutive ρ² rings (each typically with 4 or 8 pixels)
+# number of grouped consecutive ρ² rings for Miller's approach
+# (each typically with 4 or 8 pixels)
 const MILLER_GROUPS = 10
 # start and stop view angle for use in Lang's regression method
 const LANG_START = 25/180*pi
 const LANG_END = 65/180*pi
 
-# Constant angle
-### 
+##
+## Constant angle
+## 
+
 # At constant zenith view angle of 1 rad the gapfraction is almost independent
-# of leaf angle distribution
+# of the leaf angle distribution.
 function zenith57(polim::PolarImage, thresh; ringwidth=RING_WIDTH)
     G = 0.5 
     θedges, θmid, K57 = contactfreqs(polim, 1-ringwidth, 1+ringwidth,1,thresh)
@@ -17,9 +20,11 @@ function zenith57(polim::PolarImage, thresh; ringwidth=RING_WIDTH)
 end
 zenith57(polim::PolarImage) = zenith57(polim, threshold(polim))
 
-# Lang's method
-###
-# Approximate the contact frequency with first order regression
+##
+## Lang's method
+##
+
+# Approximate the contact frequency with a first order regression
 lang(polim::PolarImage, thresh::Real) = lang(polim, thresh, LANG_START, LANG_END)
 
 function lang(polim::PolarImage, thresh::Real, θ1::Real, θ2::Real)    
@@ -34,13 +39,18 @@ function lang(polim::PolarImage, thresh::Real, θ1::Real, θ2::Real, N::Integer)
     2*sum(linreg(θmid, K))
 end
 
-# Miller's formula
 ##
-## Miller's formula assuming constant leaf angle
+## Miller's formula
+##
+
+# Miller's formula assuming constant leaf angle. We implement 3 methods:
+# * the simple one taking the integration for each unique ρ
+# * grouping consecutive ρ distances
+# * dividing the zenith range in N rings with equal number of pixels (default)
 miller(polim::PolarImage, thresh::Real) = millerrings(polim, thresh)
 miller(polim::PolarImage) = miller(polim, threshold(polim))
 
-# the simple method takes too little pixels per iteration and distorts the gap
+# The simple method takes too little pixels per iteration and distorts the gap
 # fraction. It is only given for reference.
 function millersimple(polim::PolarImage, thresh::Real)
     prevθ = 0.
@@ -58,7 +68,7 @@ function millersimple(polim::PolarImage, thresh::Real)
     return(2s)
 end
 
-# group a number of consecutive ρ²-rings together and then integrate
+# Group a number of consecutive ρ²-rings together and then integrate.
 # dθ is incorrect for first and last, but the cos or sin will reduce these terms.
 function millergroup(polim::PolarImage, group::Integer, thresh::Real)
     s = 0.    
@@ -101,8 +111,11 @@ function millerrings(polim::PolarImage, thresh::Real)
     millerrings(polim, Nrings, thresh)
 end
 
-# Ellipsoidal 
-###
+
+##
+## Ellipsoidal 
+##
+
 # Assuming an ellipsoidal leaf angle distribution, we use the inverse model to 
 # estimate the average leaf inclination angle (ALIA) and Leaf Area Index (LAI) 
 # from the observed gap fraction per view zenith angle.
@@ -140,16 +153,17 @@ function ellips_opt(polim::PolarImage, thresh::Real)
 end
 
 # Second method using Lookup Table (LUT)
+# type to hold each element of the LUT
 immutable LUTel
     alia::Float64
     LAI::Float64
     modelled::Array{Float64}
 end
 
-function ellips_LUT(polim::PolarImage,Nrings::Integer, thresh; 
+function ellips_LUT(polim::PolarImage, Nrings::Integer, thresh; 
                     Nlut::Integer=10_000, errfun::Function=x->x^2, Nmed::Integer=25)
-    N
-    # TODO refactor because same begin as `ellips_opt`
+
+    # TODO refactor because same begin as `ellips_opt`?
 
     # Ellipsoidal projection function, formula (A.6) Thimonier et al. 2010
     G(θᵥ, χ) = cos(θᵥ) * sqrt(χ^2 + tan(θᵥ)^2) / (χ+1.702*(χ+1.12)^-0.708)
@@ -165,9 +179,10 @@ function ellips_LUT(polim::PolarImage,Nrings::Integer, thresh;
         Float64[L * G(θᵥ, ALIA_to_x(alia)) for θᵥ in θmid]
     end
 
-    function populateLUT(Nlut, model;LAI_max = 9.)
+    # as in paper, populate randomly
+    function populateLUT(Nlut, model; LAI_max = 9.)
         LUT = Array(LUTel, Nlut)    
-        alia_max = pi/2 - .001 
+        alia_max = pi/2 - .001 #against possible instability at π/2
         for i = 1:Nlut
             alia = rand() * alia_max
             LAI = rand() * LAI_max
@@ -186,9 +201,10 @@ function ellips_LUT(polim::PolarImage,Nrings::Integer, thresh;
     end
     # get median of closest parameters
     LUTsortind = sortperm(LUTdiff)
-    #LUT_alia = median([l.alia for l in LUT[LUTsortind[1:Nmed]]])
-    LUT_LAI = median([l.LAI for l in LUT[LUTsortind[1:Nmed]]])
+    #LUT_alia = median([el.alia for el in LUT[LUTsortind[1:Nmed]]])
+    LUT_LAI = median([el.LAI for el in LUT[LUTsortind[1:Nmed]]])
 end
+
 function ellips_LUT(polim::PolarImage, thresh::Real; kwargs...) 
     Nrings = iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS)
     ellips_LUT(polim, Nrings, thresh; kwargs...)

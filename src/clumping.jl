@@ -11,3 +11,5 @@ end
 function langxiang45(polim::PolarImage, thresh, θ1::Real, θ2::Real)
 	langxiang(polim, thresh, θ1, θ2, 8)
 end
+
+# for Chen Cihlar see 'ChenCihlar.jl'
