@@ -125,20 +125,6 @@ end
 ## Minimum method
 ##
 
-# A fast histogram method derived from julialang PR #8952.
-function fasthist(img::AbstractVector, edg::Range)    
-    n = length(edg) - 1
-    histcount = zeros(Int, n)
-    step(edg) <= 0 && error("step(edg) must be positive")
-    for pixel in img
-        f = (pixel - first(edg))/step(edg)
-        if 0 < f <= n
-            histcount[iceil(f)] += 1
-        end
-    end
-    edg, histcount
-end
-
 # Check if histogram is bimodal by detecting change in direction.
 # TODO rewrite with diff 
 function isbimodal(hc) #hc=histcounts    
@@ -211,8 +197,9 @@ function smooth_hist!{T<:FloatingPoint}(hc::AbstractArray{T})
 end
 # precision does not seem to increase by increasing binsize
 function minimum_threshold(img; bins=256, maxiter=10_000)       
-    hrange, counts = fasthist(reshape(img,length(img)), -1/(bins-1):1/(bins-1):1)
-    counts = float(counts)
+    hist_range = -1/(bins-1):1/(bins-1):1
+    counts = fasthist(reshape(img,length(img)), hist_range)
+    counts = float(counts) # required for convergence!
     cnt = 0
     while cnt < maxiter
         cnt += 1

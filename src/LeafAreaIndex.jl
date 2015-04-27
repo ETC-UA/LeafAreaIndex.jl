@@ -1,6 +1,6 @@
 module LeafAreaIndex
 
-import FixedPointNumbers, ArrayViews, Optim, Memoize, LsqFit
+import FixedPointNumbers, ArrayViews, Optim, Memoize, LsqFit, FastAnonymous
 
 VERSION < v"0.4-" && using Docile
 @docstrings
@@ -26,6 +26,21 @@ StreamMean() = StreamMean(0.,0)
 update(sm::StreamMean, term) = StreamMean(sm.streamsum + term, sm.len+1)
 Base.mean(sm::StreamMean) = sm.streamsum / sm.len
 Base.empty!(sm::StreamMean) = StreamMean()
+
+# A fast histogram method derived from julialang PR #8952. Used in thresholding
+# and slope adjustment.
+function fasthist(img::AbstractVector, edg::Range)    
+    n = length(edg) - 1
+    histcount = zeros(Int, n)
+    step(edg) <= 0 && error("step(edg) must be positive")
+    for pixel in img
+        f = (pixel - first(edg))/step(edg)
+        if 0 < f <= n
+            histcount[iceil(f)] += 1
+        end
+    end
+    histcount
+end
 
 
 include("CameraLens.jl")

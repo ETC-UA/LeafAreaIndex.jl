@@ -1,5 +1,5 @@
 ## PolarImage ##
-const APPROX_N=1000
+const APPROX_N=100
 
 # Type to contain an image and its polar transform
 type PolarImage{T, A <: AbstractMatrix}
@@ -16,7 +16,7 @@ function PolarImage(img::AbstractMatrix, cl::CameraLens)
     imgsort = img[cl.sort_ind]
     imgspiral = img[cl.spiral_ind]
     τsort = create_τsort(NoSlope(), cl)
-    PolarImage{eltype(img), typeof(img)}(cl, NoSlope(), img, imgsort, imgspiral,τsort)
+    PolarImage{eltype(img), typeof(img)}(cl, NoSlope(), img, imgsort, imgspiral, τsort)
 end
 function PolarImage(img::AbstractMatrix, cl::CameraLens, slope::SlopeInfo)
     imgsort = img[cl.sort_ind]
@@ -25,31 +25,22 @@ function PolarImage(img::AbstractMatrix, cl::CameraLens, slope::SlopeInfo)
     PolarImage{eltype(img), typeof(img)}(cl, slope, img, imgsort, imgspiral,τsort)
 end
 
-function approx_fρ²θ(cl::CameraLens; N=APPROX_N)
-    # fit θ(x) = ax + bx² + cx³ with x=ρ²
-
-    ρ² = linspace(0, cl.ρ²sort[end], N)
-    A = [ρ²ᵢ^p for ρ²ᵢ in ρ², p = 1:3]
-    a,b,c = A \ ρ²
-    x -> a*x + b*x^2 +c*c^3
-    # TODO using FastAnonymous
-end
-
-function create_τsort(sl::NoSlope, cl::CameraLens)
+Memoize.@memoize function create_τsort(sl::NoSlope, cl::CameraLens)
     # create θ in case of no slope
     τsort = similar(cl.ϕsort)
     ρ²sort = cl.ρ²sort 
-    fρ²θ = approx_fρ²θ(cl) 
+    fρ²θ = approx_fρ²θ(cl)
     @inbounds for i = 1:length(τsort)
         τsort[i] = fρ²θ(τsort[i])
     end
     τsort
 end
-# @memoize?
-function create_τsort(sl::Slope, cl::CameraLens)
+# TODO remove memoize? This memory will not be freed. CAREFUL!
+Memoize.@memoize function create_τsort(sl::Slope, cl::CameraLens)
     τsort = copy(cl.ϕsort)
     ρ²sort = cl.ρ²sort    
-    fρ²θ(ρ²) = cl.fρθ(sqrt(ρ²)) 
+    #fρ²θ(ρ²) = cl.fρθ(sqrt(ρ²)) 
+    fρ²θ = approx_fρ²θ(cl)
     α = sl.α
     ε = sl.ε
     @inbounds for i = 1:length(τsort)
@@ -59,6 +50,18 @@ function create_τsort(sl::Slope, cl::CameraLens)
     end
     τsort
 end
+
+function approx_fρ²θ(cl::CameraLens; N=APPROX_N)    
+    # fit θ(x) = a*sqrt(x) + bx + c*x^3/2 with x=ρ² for fast inverse projection function
+
+    ρ² = linspace(0, cl.ρ²sort[end], N)
+    A = [ρ²ᵢ^p for ρ²ᵢ in ρ², p in [0.5,1.,1.5]]
+    a,b,c = A \ map(cl.fρθ, sqrt(ρ²))
+    
+    f = FastAnonymous.@anon x -> (a*sqrt(x) + b*x + c*x^1.5)
+    return f
+end
+
 
 slope(polim::PolarImage) = slope(polim.slope)
 aspect(polim::PolarImage) = aspect(polim.slope)
