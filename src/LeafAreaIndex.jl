@@ -25,6 +25,7 @@ end
 StreamMean() = StreamMean(0.,0)
 update(sm::StreamMean, term) = StreamMean(sm.streamsum + term, sm.len+1)
 Base.mean(sm::StreamMean) = sm.streamsum / sm.len
+Base.empty!(sm::StreamMean) = StreamMean()
 
 
 include("CameraLens.jl")

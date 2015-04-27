@@ -24,3 +24,18 @@ slope(sl::NoSlope) = 0.
 
 aspect(sl::Slope) = sl.ε
 aspect(sl::NoSlope) = 0.
+
+slope_adj(sl::NoSlope, θ::Real, ϕ::Float64) = 1.
+function slope_adj(sl::Slope, θ::Real, ϕ::Float64) 
+    # the cos(sl.α) term adjust for cartographic surface projection
+     1 / (cos(sl.α) * (1 + tan(θ)*cos(sl.ε-ϕ)*tan(sl.α)))
+end
+slope_adj(sl::NoSlope, θ::Real, ϕv::AbstractArray) = ones(length(ϕv))
+function slope_adj(sl::Slope, θ::Real, ϕv::AbstractArray)
+    adj = ones(length(ϕv))
+    for i = 1:length(adj)
+        adj[i] = slope_adj(sl, θ, ϕv[i])
+    end
+    adj
+    #Float64[slope_adj(sl, θ, ϕ) for ϕ in ϕv] #allocates 
+end

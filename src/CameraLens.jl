@@ -46,12 +46,12 @@ function count_unique(ρ²sort)
     ρ²unique, unshift!(cumsum(ρ²uniquecounts)+1,1)
 end
 
-# spiral indices: combine ρ² for a single pixel width and then sort on ϕ.
+# spiral indices: combine ρ² for a ring of single pixel width and then sort on ϕ.
 # Assumes implicitely an offset of -π, where spiral jumps to next ring.
 # Used for gap lengths in Chen Chilar clumping.
 function spiralindex(ind, ρmax, ρ²unique, ρ²unique_ind, ϕsort)
     spiralind = similar(ind)
-    ρ²spiralind = Int[] #temp array for single pixel ρ² indices
+    ρ²spiralind = Int[] #temp array for ring of single pixel ρ² indices
     ind_prev = 1    
     for singleρ² in [1:ρmax].^2        
         firstρ²ind = searchsortedfirst(ρ²unique, singleρ²)       
@@ -68,15 +68,41 @@ function spiralindex(ind, ρmax, ρ²unique, ρ²unique_ind, ϕsort)
     spiral_ind = ind[spiralind]
 end
 
-# CameraLens constructor function
-function calibrate(size1, size2, ci::Int, cj::Int, fθρ, fρθ)
+using Base.Test
+function check_calibration_inputs(size1, size2, ci::Int, cj::Int, fθρ::Function,
+                                  fρθ::Function)
+
     size1 < 0 && error(BoundsError())
     size2 < 0 && error(BoundsError())
     ci < 0 && error(BoundsError())
     cj < 0 && error(BoundsError())    
+    
+    abs(ci/size1 - 0.5) > 0.1 && warn("ci ($ci) more than 10% away from center ($(size1/2).")
+    abs(cj/size2 - 0.5) > 0.1 && warn("cj ($cj) more than 10% away from center ($(size1/2)).")
 
-    # TODO add warning/error if (ci,cj) far away from pic center
+    abs(ci/size1 - 0.5) > 0.2 && error("ci ($ci) more than 20% away from center ($(size1/2).")
+    abs(cj/size2 - 0.5) > 0.2 && error("cj ($cj) more than 20% away from center ($(size1/2)).")    
+    
+    fθρ(0.) < 0 && error("Incorrectly defined fθρ; fθρ(0) < 0.")
+    fθρ(pi/2) < 2 && error("Incorrectly defined fθρ; fθρ(π/2) < 2")
+    all(diff(map(fθρ, linspace(0, pi/2, 100))) .> 0) || error("Incorrectly defined fθρ; fθρ not monotonic")
 
+    fρθ(0) < 0. && error("Incorrectly defined fρθ; fρθ(0) < 0.")
+    fρθ(2) > pi/2 && error("Incorrectly defined fρθ; fρθ(2)> π/2")
+    all(diff(map(fρθ, linspace(0, pi/2, 100))) .> 0) || error("Incorrectly defined fρθ; fρθ not monotonic")
+
+    for θ in linspace(0, pi/2, 100)
+        @test_approx_eq θ fρθ(fθρ(θ))
+    end
+
+    return true
+end
+
+# CameraLens constructor function
+function calibrate(size1, size2, ci::Int, cj::Int, fθρ::Function, fρθ::Function)
+
+    check_calibration_inputs(size1, size2, ci, cj, fθρ, fρθ)
+    
     ρ² = zeros(Uint32, size1, size2)
     ϕ = zeros(Float64, size1, size2)
     for j = 1:size2
@@ -90,7 +116,7 @@ function calibrate(size1, size2, ci::Int, cj::Int, fθρ, fρθ)
     ϕ[ci,cj] = 0. #fix ϕ at center
 
     # sort by increasing ρ², then by increasing ϕ
-    ind = sortperm(reshape(ρ²+ϕ/10, length(ρ²)))
+    ind = sortperm(reshape(ρ²+ϕ/10, length(ρ²))) #this takes most time
     ρ²sort = ρ²[ind]
     ρmax = iround(fθρ(π/2))
     ρ²indmax = searchsortedlast(ρ²sort, ρmax^2)
@@ -99,7 +125,8 @@ function calibrate(size1, size2, ci::Int, cj::Int, fθρ, fρθ)
     ϕsort = ϕ[ind]
 
     # For fast indexing in ϕsort and ρ²sort by increasing ρ² we calculate the 
-    # indices where each unique ρ² starts
+    # indices where each unique ρ² starts. This is uesed by PolarRings to 
+    # iterate over rings with increasing ρ² values.
     ρ²unique, ρ²unique_ind =  count_unique(ρ²sort)
 
     # Calculate the spiral index

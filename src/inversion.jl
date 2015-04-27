@@ -44,14 +44,14 @@ end
 ##
 
 # Miller's formula assuming constant leaf angle. We implement 3 methods:
-# * the simple one taking the integration for each unique ρ
+# * the naive one taking the integration for each unique ρ
 # * grouping consecutive ρ distances
 # * dividing the zenith range in N rings with equal number of pixels (default)
 miller(polim::PolarImage, thresh::Real) = millerrings(polim, thresh)
 miller(polim::PolarImage) = miller(polim, threshold(polim))
 
-# The simple method takes too little pixels per iteration and distorts the gap
-# fraction. It is only given for reference.
+# Because the naive method takes too little pixels per iteration, it distorts 
+# the gap fraction. It is only given for reference.
 function millersimple(polim::PolarImage, thresh::Real)
     prevθ = 0.
     s = 0.
@@ -61,8 +61,12 @@ function millersimple(polim::PolarImage, thresh::Real)
     for (ρ², ϕ, px) in rings(polim)
         θ = fρ²θ(ρ²) 
         dθ = θ - prevθ
+        # slope adjustment should be done per ϕ group, but  because we only have
+        # enough pixels per iteration for a single gap fraction, we take the 
+        # mean.
+        adj = mean(slope_adj(polim.slope, θ, ϕ))
         logP = loggapfraction(px, thresh)        
-        s -= logP  * cos(θ) * sin(θ) * dθ
+        s -= logP  * cos(θ) * adj * sin(θ) * dθ
         prevθ = θ
     end
     return(2s)
@@ -75,23 +79,28 @@ function millergroup(polim::PolarImage, group::Integer, thresh::Real)
     prevθ = 0.
     count = 0
     pixs = eltype(polim)[]
+    ϕs = Float64[] # keep ϕ for slope adjustment
     avgθ = StreamMean()
     # lens projection function from ρ² to θ
     fρ²θ(ρ²) = polim.cl.fρθ(sqrt(ρ²)) 
     for (ρ², ϕ, px) in rings(polim)       
         count += 1        
         avgθ = update(avgθ, fρ²θ(ρ²))
+        append!(ϕs, ϕ)
         append!(pixs, px)
         
         if count == group
             θ = mean(avgθ)
             dθ = θ - prevθ
-            logP = loggapfraction(pixs, thresh)            
-            s -= logP * cos(θ) * sin(θ) * dθ
+            logP = loggapfraction(pixs, thresh)
+            adj = mean(slope_adj(polim.slope, θ, ϕ))
+            # TODO rewrite with contactfreqs?            
+            s -= logP * cos(θ) * adj * sin(θ) * dθ
             
             prevθ = θ
             count = 0
             empty!(pixs)
+            empty!(ϕs)
             empty!(avgθ)
         end            
     end    
@@ -101,13 +110,17 @@ millergroup(polim::PolarImage, thresh::Real) = millergroup(polim, MILLER_GROUPS,
 
 # Finally, create a N rings and integrate. This is the most robust way.
 function millerrings(polim::PolarImage, N::Integer, thresh)
-    θedges, θmid, K = contactfreqs(polim, 0., pi/2, N, thresh)    
+    θedges, θmid, K = contactfreqs(polim, 0., pi/2, N, thresh)
     dθ = diff(θedges)
     2 * sum(K .* sin(θmid) .* dθ) 
 end
 
 function millerrings(polim::PolarImage, thresh::Real) 
-    Nrings = iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS)
+    if isa(polim.slope, NoSlope)
+        Nrings = iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS)
+    else
+        Nrings = iceil(polim.cl.fθρ(pi/2) / AZIMUTH_GROUPS / MILLER_GROUPS)
+    end
     millerrings(polim, Nrings, thresh)
 end
 
@@ -162,7 +175,7 @@ end
 
 function ellips_LUT(polim::PolarImage, Nrings::Integer, thresh; 
                     Nlut::Integer=10_000, errfun::Function=x->x^2, Nmed::Integer=25)
-
+    # TODO precalculate LUT
     # TODO refactor because same begin as `ellips_opt`?
 
     # Ellipsoidal projection function, formula (A.6) Thimonier et al. 2010
