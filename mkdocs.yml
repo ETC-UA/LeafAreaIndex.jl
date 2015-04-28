@@ -4,4 +4,6 @@ repo_url: https://github.com/ETC-UA/LeafAreaIndex.jl
 
 site_dir: 'docs/site'
 markdown_extensions: [mathjax]
-extra_javascript: ['mathjaxhelper.js']
+# the url needs to come before the custom .js script
+extra_javascript: ['https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML','mathjaxhelper.js']
+

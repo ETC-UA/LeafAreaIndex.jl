@@ -1,5 +1,3 @@
-<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML">
-</script>
 # Test voor docs
 
 Een link naar [ICOS België](http://www.icos-belgium.be/news.html).
