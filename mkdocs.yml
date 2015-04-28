@@ -1,5 +1,5 @@
 site_name: Leaf Area Index Documentation
-
+site_author: Ken Bastiaensen
 repo_url: https://github.com/ETC-UA/LeafAreaIndex.jl
 
 site_dir: 'docs/site'
