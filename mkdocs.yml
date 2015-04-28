@@ -1,0 +1,7 @@
+site_name: Leaf Area Index Documentation
+
+repo_url: https://github.com/ETC-UA/LeafAreaIndex.jl
+
+site_dir: 'docs/site'
+markdown_extensions: [mathjax]
+extra_javascript: ['mathjaxhelper.js']
