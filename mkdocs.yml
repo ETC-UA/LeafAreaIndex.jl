@@ -3,7 +3,8 @@ site_name: Leaf Area Index Documentation
 repo_url: https://github.com/ETC-UA/LeafAreaIndex.jl
 
 site_dir: 'docs/site'
-markdown_extensions: [mathjax]
+#markdown_extensions: [mathjax] 
+markdown_extensions: [math] #mdx_math.py comes with a setup.py script
 # the url needs to come before the custom .js script
 extra_javascript: ['https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML','mathjaxhelper.js']
 

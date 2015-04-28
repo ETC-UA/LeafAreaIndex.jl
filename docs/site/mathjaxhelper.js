@@ -1,10 +1,8 @@
-/*
-#if false
-Prevent Unity to try compiling this js
-*/
+// MathJax.Hub.Config({
+// 	"tex2jax": { inlineMath: [ [ '$', '$' ] ] }
+// 	});
 MathJax.Hub.Config({
-	"tex2jax": { inlineMath: [ [ '$', '$' ] ] }
-	});
-/*
-#endif
-*/
+  config: ["MMLorHTML.js"],
+  jax: ["input/TeX", "output/HTML-CSS", "output/NativeMML"],
+  extensions: ["MathMenu.js", "MathZoom.js"]
+});
