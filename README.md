@@ -5,24 +5,21 @@
 
 Tools to work with [hemispherical pictures](http://en.wikipedia.org/wiki/Hemispherical_photography) for the determination of [Leaf Area Index (LAI)](http://en.wikipedia.org/wiki/Leaf_area_index).
 
-This package introduces the PolarImage type with a few convenient methods to access certain parts of the image in polar coordinates.
+This package introduces the PolarImage type with a few convenient methods to access certain parts of an image in polar coordinates.
 
 ## Quick introduction
 
 You construct a PolarImage from a Calibration type and an Image (or in general, a Matrix). For the calibration you need the image size, the coordinates of the lens center and the (inverse) projection function. 
-(The projection function maps polar distance ρ on the image to the zenith angle θ of the scene and is usually not linear.)
+(The projection function maps polar distance ρ in pixels on the image to the zenith angle θ in radians of the scene and is usually not linear.)
 
-    mycameralens = calibrate(width, height, ci, cj, fθρ, fρθ)
+    using Images
+    img = imread("image.dng")
+    mycameralens = calibrate(height, width, ci, cj, fθρ, fρθ)
     polarimg = PolarImage(img, mycameralens)
 
-You can now construct an *iterator* to access a specific zenith range, eg between 30ᵒ and 60ᵒ. It will return the pixels on each ring in the range by increasing ρ² in a tuple with a vector of polar angles ϕ and a vector of corresponding pixels.
 
-    
-    for (ρ², ϕ, px) in rings(polarimg, pi/6, pi/3)
-        # do something with each ρ², ϕ, px variable
-    end
 
-If you just want the pixels in a zenith range, `pixels(polarimg, pi/6, pi/3)` will return a vector with pixels very fast. A shortcut `pixels(polarimg)` is translated to `pixels(polarimg, 0, pi/2)`.
+To access the pixels in a particular zenith range, `pixels(polarimg, pi/6, pi/3)` will return a vector with pixels quickly, sorted by increasing ρ and polar angles ϕ. A shortcut `pixels(polarimg)` is translated to `pixels(polarimg, 0, pi/2)`.
 
 The `segments` function can further splits these ring pixels in n segments (eg. for clumping calculation). It returns a vector with n elements, each a vector with segment pixels.
 

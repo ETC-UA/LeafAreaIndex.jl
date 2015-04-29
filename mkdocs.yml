@@ -9,4 +9,5 @@ markdown_extensions: [math] #mdx_math.py comes with a setup.py script
 extra_javascript: ['https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML','mathjaxhelper.js']
 
 pages:
+# Needs an `index.md` file, otherwise readthedocs will fall back to README.md
 - [index.md, ReadTheDocs Testing]
