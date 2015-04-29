@@ -7,34 +7,55 @@ Tools to work with [hemispherical pictures](http://en.wikipedia.org/wiki/Hemisph
 
 This package introduces the PolarImage type with a few convenient methods to access certain parts of an image in polar coordinates.
 
-## Quick introduction
+View the full documentation on readthedocs: http://leafareaindexjl.readthedocs.org .
 
-You construct a PolarImage from a Calibration type and an Image (or in general, a Matrix). For the calibration you need the image size, the coordinates of the lens center and the (inverse) projection function. 
-(The projection function maps polar distance ρ in pixels on the image to the zenith angle θ in radians of the scene and is usually not linear.)
+# Quick introduction
 
-    using Images
+Install the package through
+
+    Pkg.clone("https://github.com/ETC-UA/LeafAreaIndex.jl")
+
+You construct a PolarImage from a Calibration type and an Image (or in general, a Matrix). The calibration requires the image size, the coordinates of the lens center and the (inverse) projection function. 
+(The projection function maps polar distance ρ [in pixels] on the image to the zenith angle θ [in radians] of the scene and is usually not linear.)
+
+    using Images, LeafAreaIndex
     img = imread("image.dng")
     mycameralens = calibrate(height, width, ci, cj, fθρ, fρθ)
     polarimg = PolarImage(img, mycameralens)
 
+The first step is automatical thresholding with the default method Ridler Calvard:
 
+    thresh = threshold(polarimg)
 
-To access the pixels in a particular zenith range, `pixels(polarimg, pi/6, pi/3)` will return a vector with pixels quickly, sorted by increasing ρ and polar angles ϕ. A shortcut `pixels(polarimg)` is translated to `pixels(polarimg, 0, pi/2)`.
+The clumping factor can be estimated with the method of Lang Xiang with 45ᵒ segments between view angles θ1 and θ2 using `langxiang45(polarimg, thresh, θ1, θ2)`. Similarly `chencihlar(polarimg, thresh, θ1, θ2)` for the Chen Chilar method.
 
-The `segments` function can further splits these ring pixels in n segments (eg. for clumping calculation). It returns a vector with n elements, each a vector with segment pixels.
+There are two methods to estimate LAI assuming an ellipsoidal leave angle distribution, both also estimating the Average Leaf Inclination Angle (ALIA). The first one uses a Lookup Table (LUT) and the second one an optimization method.
 
-Some methods for automatic thresholding and LAI determination:
+    LAI1 = ellips_LUT(polarimg, thresh)
+    LAI2 = ellips_opt(polarimg, thresh)
 
-    thresh = threshold(pixels(polarimg))
-    gf30 = gapfraction(pixels(polarimg, pi/6 - 5/180*pi, pi/6 + 5/180*pi))
-    LAI57 = zenith57(polarimg, thresh)
-    LAImiller = miller(polarimg, thresh)
-    LAIlang = lang(polarimg, thresh)
-    seg = segments(polim, 55/180*pi, 60/180*pi, 8)
-    seg_gapfr = Float64[LAI.gapfraction(seg[i], thresh) for i = 1:length(seg)]
-    clump_LX = log(mean(seg_gapfr)) / mean(log(seg_gapfr))
+## further methods
 
-This package is in full development. Please feel free to submit any issue through the issue tracker. Code suggestions are very much appreciated through a pull request.
+For images taken (vertically upwards) on a domain with slope of eg 10ᵒ and downward to the East, you must include this in your PolarImage.
+
+    myslope = Slope(10/180*pi, pi/2)
+    polarimg = PolarImage(img, mycameralens, myslope)
+
+Two more automatic thresholding methods can be used with `edge_threshold` and `minimum_threshhold` for the Edge Detection and Minimum algorithm.
+
+Further LAI estimation methods are available: `zenith57(polarimg, thresh)` for using a view angle of 57ᵒ where the ALIA influence is minimal; `miller(polarimg, thresh` for miller integration assuming a constant leaf angle; and `lang(polarimg, thresh)` that uses a first order regression on the miller method.
+
+To access the pixels in a particular zenith range, `pixels(polarimg, pi/6, pi/3)` will return a vector with pixels quickly, sorted by increasing ρ (and then by polar angles ϕ for identical ρ). A shortcut `pixels(polarimg)` is translated to `pixels(polarimg, 0, pi/2)`.
+
+The `segments` function can further split these ring pixels in n segments (eg. for clumping calculation). It returns a vector with n elements, each a vector with segment pixels.
+
+You can also construct an *iterator* to access a specific zenith range. It will return the pixels on each ring in the range by increasing integer ρ² in a tuple with a vector of polar angles ϕ and a vector of corresponding pixels.
+    
+    for (ρ², ϕ, px) in rings(polarimg, pi/6, pi/3)
+        # do something with each ρ², ϕ, px variable
+    end
+
+In case of problems or suggestion, don't hesitate to submit an issue through the issue tracker or code suggestions through a pull request.
 
 
 
