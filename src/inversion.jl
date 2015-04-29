@@ -7,11 +7,14 @@ const MILLER_GROUPS = 10
 const LANG_START = 25/180*pi
 const LANG_END = 65/180*pi
 # maximum viewing angle
-θMAX = π/2
+const θMAX = π/2
 # Lookup Table parameters as in paper
-LUT_POINTS = 10_000 # number of points in LUT
-LUT_ERROR_FUN = FastAnonymous.@anon (x->x^2) # for sum of squares error function
-LUT_NMEDIAN = 25 # number of points to sample (median) LAI from
+const LUT_POINTS = 10_000 # number of points in LUT
+const LUT_NMEDIAN = 25 # number of points to sample (median) LAI from
+# Fast anonymous functions do not work as constant keyword argument
+#const LUT_ERROR_FUN = FastAnonymous.@anon (x->x^2) # for sum of squares error function
+#const LUT_ERROR_FUN = x->x^2 # for sum of squares error function
+
 
 
 ##
@@ -187,7 +190,7 @@ function ellips_opt(polim::PolarImage, Nrings::Integer, thresh; θmax=θMAX)
     error("ellips_opt did not terminate normally")
 end
 
-function ellips_opt(polim::PolarImage, thresh::Real; θmax=θMAX) 
+function ellips_opt(polim::PolarImage, thresh::Real; θmax=θMAX)
     Nrings = iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS)
     ellips_opt(polim, Nrings, thresh; θmax=θmax)
 end
@@ -200,9 +203,8 @@ immutable LUTel
     modelled::Array{Float64}
 end
 
-function ellips_LUT(polim::PolarImage, Nrings::Integer, thresh; θmax = θMAX,
-                    Nlut::Integer=LUT_POINTS, errfun::Function=LUT_ERROR_FUN, 
-                    Nmed::Integer=LUT_NMEDIAN)
+function ellips_LUT(polim::PolarImage, Nrings::Integer, thresh; θmax=θMAX, 
+                    Nlut::Integer=LUT_POINTS, Nmed::Integer=LUT_NMEDIAN)
 
     # TODO precalculate LUT
     # TODO refactor because same begin as `ellips_opt`?
@@ -221,7 +223,8 @@ function ellips_LUT(polim::PolarImage, Nrings::Integer, thresh; θmax = θMAX,
         Float64[L * G(θᵥ, ALIA_to_x(alia)) for θᵥ in θmid]
     end
 
-    # as in paper, populate randomly
+    # As in paper, populate LUT randomly. 
+    # TODO consider using Sobol pseudorandom numbers for consistency.
     function populateLUT(Nlut, model; LAI_max = 9.)
         LUT = Array(LUTel, Nlut)    
         alia_max = pi/2 - .001 #against possible instability at π/2
@@ -239,7 +242,9 @@ function ellips_LUT(polim::PolarImage, Nrings::Integer, thresh; θmax = θMAX,
     # create fitness function against observed contact frequencies
     LUTdiff = zeros(Float64, Nlut)
     for i = 1:length(LUT)
-        LUTdiff[i] = sum(map(errfun, LUT[i].modelled .- K))
+        # errfun as keyword argument does not accept FastAnonymous, so use SSE.
+        #LUTdiff[i] = sum(map(errfun, LUT[i].modelled .- K))
+        LUTdiff[i] = sum((LUT[i].modelled .- K).^2)
     end
     # get median of closest parameters
     LUTsortind = sortperm(LUTdiff)
@@ -247,7 +252,7 @@ function ellips_LUT(polim::PolarImage, Nrings::Integer, thresh; θmax = θMAX,
     LUT_LAI = median([el.LAI for el in LUT[LUTsortind[1:Nmed]]])
 end
 
-function ellips_LUT(polim::PolarImage, thresh::Real; kwargs...) 
+function ellips_LUT(polim::PolarImage, thresh::Real; kwargs...)
     Nrings = iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS)
     ellips_LUT(polim, Nrings, thresh; kwargs...)
 end
