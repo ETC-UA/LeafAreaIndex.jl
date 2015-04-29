@@ -2,9 +2,9 @@
 
 The [LeafAreaIndex.jl](https://github.com/ETC-UA/LeafAreaIndex.jl) package offers several methods to work with [hemispherical pictures](http://en.wikipedia.org/wiki/Hemispherical_photography) for the determination of [Leaf Area Index (LAI)](http://en.wikipedia.org/wiki/Leaf_area_index).
 
-The ICOS - ETC team at the University of Antwerp provides a free online service with automatic LAI determination: [available soon](http://icos.ua.ac.be/)
+The ICOS - ETC team at the University of Antwerp provides a free online service with automatic LAI estimation: [available soon](http://icos.ua.ac.be/)
 
-For more info on the organisation see the [website of ICOS Belgium](http://www.icos-belgium.be/).
+For more information on the organisation see the [website of ICOS Belgium](http://www.icos-belgium.be/).
 
 The code (and this documentation) is licensed under the permissive MIT license.
 
