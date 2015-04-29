@@ -145,6 +145,7 @@ function ellips_opt(polim::PolarImage, Nrings::Integer, thresh)
 
     θedges, θmid, K = contactfreqs(polim, 0., pi/2, Nrings, thresh)
 
+
     function model(θmid, params)
         alia, L = params
         Float64[L * G(θᵥ, ALIA_to_x(alia)) for θᵥ in θmid]
@@ -153,11 +154,30 @@ function ellips_opt(polim::PolarImage, Nrings::Integer, thresh)
     # starting point for optimization
     L_init = zenith57(polim, thresh)
     fitfunalia(alia) = sum((model(θmid, [alia, L_init]) .- K).^2)
-    aliares = Optim.optimize(fitfunalia, 0.1, pi/2-.1)        
+    aliares = Optim.optimize(fitfunalia, 0.1, pi/2-.1)
+    ALIA_init = aliares.minimum
     
-    res = LsqFit.curve_fit(model, θmid, K, [aliares.minimum, L_init])
-    ALIA, LAI = res.param
-    return LAI
+    try
+        res = LsqFit.curve_fit(model, θmid, K, [ALIA_init, L_init];show_trace=true)
+        ALIA, LAI = res.param
+        return LAI
+    catch y
+        if isa(y, DomainError)
+            # in case curve_fit does not converge and wanders out of the 
+            # parameter space, use fminbox
+            # TODO register MinFinder and use minfinder
+            lower = [0.1, 0.2]
+            upper = [pi/2-0.1, 9]
+            fitfun(x) = sum((K .- model(θmid,x)).^2)
+            fitdf = fitdf = Optim.DifferentiableFunction(fitfun)
+            res = Optim.fminbox(fitdf, [ALIA_init, L_init], lower, upper;show_trace=true)
+            ALIA, LAI = res.minimum
+            return LAI
+        else
+            throw(y)
+        end
+    end
+    error("ellips_opt did not terminate normally")
 end
 
 function ellips_opt(polim::PolarImage, thresh::Real) 
