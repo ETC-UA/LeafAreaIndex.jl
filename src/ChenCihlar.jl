@@ -1,7 +1,7 @@
 const WP_EST_N = 3
-const F_CUTOFF = 1e-3
 const WP_EST_θ1 = 10 / 180 * pi
 const WP_EST_θ2 = 80 / 180 * pi
+const F_CUTOFF = 1e-3
 const CC_ITER_MAX = 10
 
 function gaplengths(polim::PolarImage, thresh, θ1::Real, θ2::Real)

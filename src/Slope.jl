@@ -25,6 +25,8 @@ slope(sl::NoSlope) = 0.
 aspect(sl::Slope) = sl.ε
 aspect(sl::NoSlope) = 0.
 
+# auxiliary methods for slope correction (España et al 2007.)
+# used in `millergroup` and `millersimple`
 slope_adj(sl::NoSlope, θ::Real, ϕ::Float64) = 1.
 function slope_adj(sl::Slope, θ::Real, ϕ::Float64) 
     # the cos(sl.α) term adjust for cartographic surface projection

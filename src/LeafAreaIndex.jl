@@ -7,7 +7,7 @@ VERSION < v"0.4-" && using Docile
 
 export calibrate, PolarImage, pixels, gapfraction, contactfreq, threshold,
        edge_threshold, minimum_threshold, RidlerCalvard, zenith57, miller, lang, 
-       langxiang45
+       langxiang45, Slope, chencihlar
 
 # reoccuring argument checks
 macro checkθ1θ2()

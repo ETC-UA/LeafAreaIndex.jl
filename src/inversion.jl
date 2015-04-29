@@ -158,7 +158,7 @@ function ellips_opt(polim::PolarImage, Nrings::Integer, thresh)
     ALIA_init = aliares.minimum
     
     try
-        res = LsqFit.curve_fit(model, θmid, K, [ALIA_init, L_init];show_trace=true)
+        res = LsqFit.curve_fit(model, θmid, K, [ALIA_init, L_init])
         ALIA, LAI = res.param
         return LAI
     catch y
@@ -170,7 +170,7 @@ function ellips_opt(polim::PolarImage, Nrings::Integer, thresh)
             upper = [pi/2-0.1, 9]
             fitfun(x) = sum((K .- model(θmid,x)).^2)
             fitdf = fitdf = Optim.DifferentiableFunction(fitfun)
-            res = Optim.fminbox(fitdf, [ALIA_init, L_init], lower, upper;show_trace=true)
+            res = Optim.fminbox(fitdf, [ALIA_init, L_init], lower, upper)
             ALIA, LAI = res.minimum
             return LAI
         else
