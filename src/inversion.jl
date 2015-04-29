@@ -6,6 +6,13 @@ const MILLER_GROUPS = 10
 # start and stop view angle for use in Lang's regression method
 const LANG_START = 25/180*pi
 const LANG_END = 65/180*pi
+# maximum viewing angle
+θMAX = π/2
+# Lookup Table parameters as in paper
+LUT_POINTS = 10_000 # number of points in LUT
+LUT_ERROR_FUN = FastAnonymous.@anon (x->x^2) # for sum of squares error function
+LUT_NMEDIAN = 25 # number of points to sample (median) LAI from
+
 
 ##
 ## Constant angle
@@ -52,13 +59,13 @@ miller(polim::PolarImage) = miller(polim, threshold(polim))
 
 # Because the naive method takes too little pixels per iteration, it distorts 
 # the gap fraction. It is only given for reference.
-function millersimple(polim::PolarImage, thresh::Real)
+function millersimple(polim::PolarImage, thresh::Real; θmax=θMAX)
     prevθ = 0.
     s = 0.
     #define inverse function for ρ²
     fρ²θ(ρ²) = polim.cl.fρθ(sqrt(ρ²)) 
 
-    for (ρ², ϕ, px) in rings(polim)
+    for (ρ², ϕ, px) in rings(polim, 0, θmax)
         θ = fρ²θ(ρ²) 
         dθ = θ - prevθ
         # slope adjustment should be done per ϕ group, but  because we only have
@@ -74,7 +81,7 @@ end
 
 # Group a number of consecutive ρ²-rings together and then integrate.
 # dθ is incorrect for first and last, but the cos or sin will reduce these terms.
-function millergroup(polim::PolarImage, group::Integer, thresh::Real)
+function millergroup(polim::PolarImage, group::Integer, thresh::Real; θmax=θMAX)
     s = 0.    
     prevθ = 0.
     count = 0
@@ -83,7 +90,7 @@ function millergroup(polim::PolarImage, group::Integer, thresh::Real)
     avgθ = StreamMean()
     # lens projection function from ρ² to θ
     fρ²θ(ρ²) = polim.cl.fρθ(sqrt(ρ²)) 
-    for (ρ², ϕ, px) in rings(polim)       
+    for (ρ², ϕ, px) in rings(polim, 0., θmax)       
         count += 1        
         avgθ = update(avgθ, fρ²θ(ρ²))
         append!(ϕs, ϕ)
@@ -109,19 +116,19 @@ end
 millergroup(polim::PolarImage, thresh::Real) = millergroup(polim, MILLER_GROUPS, thresh)
 
 # Finally, create a N rings and integrate. This is the most robust way.
-function millerrings(polim::PolarImage, N::Integer, thresh)
-    θedges, θmid, K = contactfreqs(polim, 0., pi/2, N, thresh)
+function millerrings(polim::PolarImage, N::Integer, thresh; θmax=θMAX)
+    θedges, θmid, K = contactfreqs(polim, 0., θmax, N, thresh)
     dθ = diff(θedges)
     2 * sum(K .* sin(θmid) .* dθ) 
 end
 
-function millerrings(polim::PolarImage, thresh::Real) 
+function millerrings(polim::PolarImage, thresh::Real; kwargs...) 
     if isa(polim.slope, NoSlope)
         Nrings = iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS)
     else
         Nrings = iceil(polim.cl.fθρ(pi/2) / AZIMUTH_GROUPS / MILLER_GROUPS)
     end
-    millerrings(polim, Nrings, thresh)
+    millerrings(polim, Nrings, thresh; kwargs...)
 end
 
 
@@ -134,7 +141,7 @@ end
 # from the observed gap fraction per view zenith angle.
 
 # First method using optimization
-function ellips_opt(polim::PolarImage, Nrings::Integer, thresh)
+function ellips_opt(polim::PolarImage, Nrings::Integer, thresh; θmax=θMAX)
     
     # Ellipsoidal projection function, formula (A.6) Thimonier et al. 2010
     G(θᵥ, χ) = cos(θᵥ) * sqrt(χ^2 + tan(θᵥ)^2) / (χ+1.702*(χ+1.12)^-0.708)
@@ -143,7 +150,7 @@ function ellips_opt(polim::PolarImage, Nrings::Integer, thresh)
     # formula (30) in Wang et al 2007
     ALIA_to_x(ALIA) = (ALIA/9.65).^-0.6061 - 3
 
-    θedges, θmid, K = contactfreqs(polim, 0., pi/2, Nrings, thresh)
+    θedges, θmid, K = contactfreqs(polim, 0., θmax, Nrings, thresh)
 
 
     function model(θmid, params)
@@ -163,8 +170,8 @@ function ellips_opt(polim::PolarImage, Nrings::Integer, thresh)
         return LAI
     catch y
         if isa(y, DomainError)
-            # in case curve_fit does not converge and wanders out of the 
-            # parameter space, use fminbox
+            # in case LsqFit.curve_fit does not converge and wanders out of the 
+            # parameter space, use Optim.fminbox.
             # TODO register MinFinder and use minfinder
             lower = [0.1, 0.2]
             upper = [pi/2-0.1, 9]
@@ -180,9 +187,9 @@ function ellips_opt(polim::PolarImage, Nrings::Integer, thresh)
     error("ellips_opt did not terminate normally")
 end
 
-function ellips_opt(polim::PolarImage, thresh::Real) 
+function ellips_opt(polim::PolarImage, thresh::Real; θmax=θMAX) 
     Nrings = iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS)
-    ellips_opt(polim, Nrings, thresh)
+    ellips_opt(polim, Nrings, thresh; θmax=θmax)
 end
 
 # Second method using Lookup Table (LUT)
@@ -193,8 +200,10 @@ immutable LUTel
     modelled::Array{Float64}
 end
 
-function ellips_LUT(polim::PolarImage, Nrings::Integer, thresh; 
-                    Nlut::Integer=10_000, errfun::Function=x->x^2, Nmed::Integer=25)
+function ellips_LUT(polim::PolarImage, Nrings::Integer, thresh; θmax = θMAX,
+                    Nlut::Integer=LUT_POINTS, errfun::Function=LUT_ERROR_FUN, 
+                    Nmed::Integer=LUT_NMEDIAN)
+
     # TODO precalculate LUT
     # TODO refactor because same begin as `ellips_opt`?
 
