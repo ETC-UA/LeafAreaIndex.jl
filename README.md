@@ -18,10 +18,12 @@ Install the package through
 You construct a PolarImage from a Calibration type and an Image (or in general, a Matrix). The calibration requires the image size, the coordinates of the lens center and the (inverse) projection function. 
 (The projection function maps polar distance ρ [in pixels] on the image to the zenith angle θ [in radians] of the scene and is usually not linear.)
 
-    using Images, LeafAreaIndex
+    using Images
     img = imread("image.dng")
+    imgblue = blue(img) #take the blue channel
+    using LeafAreaIndex
     mycameralens = calibrate(height, width, ci, cj, fθρ, fρθ)
-    polarimg = PolarImage(img, mycameralens)
+    polarimg = PolarImage(imgblue, mycameralens)
 
 The first step is automatical thresholding with the default method Ridler Calvard:
 

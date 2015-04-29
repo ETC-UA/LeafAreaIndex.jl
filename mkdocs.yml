@@ -3,6 +3,7 @@ site_author: Ken Bastiaensen
 repo_url: https://github.com/ETC-UA/LeafAreaIndex.jl
 docs_dir: 'docs'
 site_dir: 'docs/site'
+theme: readthedocs
 #markdown_extensions: [mathjax] 
 markdown_extensions: [math] #mdx_math.py comes with a setup.py script
 # the url needs to come before the custom .js script
@@ -11,3 +12,5 @@ extra_javascript: ['https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX
 pages:
 # Needs an `index.md` file, otherwise readthedocs will fall back to README.md
 - [index.md, ReadTheDocs Testing]
+- [LAI.md]
+- [Binarization.md]
