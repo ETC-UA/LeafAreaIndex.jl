@@ -4,13 +4,17 @@ repo_url: https://github.com/ETC-UA/LeafAreaIndex.jl
 docs_dir: 'docs'
 site_dir: 'doc_site'
 theme: readthedocs
+
 #markdown_extensions: [mathjax] 
-markdown_extensions: [math, codehilite] #mdx_math.py comes with a setup.py script
+#mdx_math.py comes with a setup.py script
+markdown_extensions: [math, fenced_code, codehilite, footnotes]
+
 # the url needs to come before the custom .js script
 extra_javascript: ['https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML','mathjaxhelper.js']
 
 pages:
 # Needs an `index.md` file, otherwise readthedocs will fall back to README.md
 - [index.md]
+- [quick_intro.md]
 - [gapfraction.md]
 - [LAI.md]

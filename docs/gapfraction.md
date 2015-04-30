@@ -25,6 +25,8 @@ You can access the different methods with (where `polimg` is a `PolarImage` inst
 
 The `RidlerCalvard` and `minimum_threshold` only use pixels within a 90ᵒ view angle, while `edge_threshold` cuts out a rectangle around the visible pixels to maintain order of neighbouring pixels.
 
+
+
 ## Gap Fraction
 
 Once a threshold ahs been set, you can calculate a gap fraction for a specific part of the image and specialized methods exist for its logarithm and the contact frequency. However, these low level functions are in general not required to be called by the user but are automatically called by higher level functions. See the implementation section for more details.

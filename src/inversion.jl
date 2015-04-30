@@ -3,7 +3,8 @@ const RING_WIDTH = 5/180*π
 # number of grouped consecutive ρ² rings for Miller's approach
 # (each typically with 4 or 8 pixels)
 const MILLER_GROUPS = 10
-# start and stop view angle for use in Lang's regression method
+# start and stop view angle for use in Lang's regression method from Weiss et al
+# 2004 paragraph 2.2.2.2
 const LANG_START = 25/180*pi
 const LANG_END = 65/180*pi
 # maximum viewing angle
