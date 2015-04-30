@@ -115,15 +115,18 @@
 <p>We estimate LAI from the gap fraction through inversion of the Poisson model:</p>
 <p>
 <script type="math/tex; mode=display"> T(\theta_V) = \exp\big(-k(\theta_V) L_e\big) = \exp\Big(-\frac{G(\theta_V)L_e}{\cos\theta_V}\Big)</script>
-with <script type="math/tex">T(\theta_V)</script>: the mean <strong>t</strong>ransmission or gap fraction,</p>
+</p>
+<p>with 
+<script type="math/tex">T(\theta_V)</script>: the mean <strong>t</strong>ransmission or gap fraction,</p>
 <p>
-<script type="math/tex">\theta_V</script> the <strong>v</strong>iew zenit angle,</p>
+<script type="math/tex">\theta_V</script>: the <strong>v</strong>iew zenit angle,</p>
 <p>
-<script type="math/tex">L_e</script>: the <strong>e</strong>ffective <strong>L</strong>eaf Area Index with <script type="math/tex">L_e = L*\Omega</script> and <script type="math/tex">\Omega</script> the cluming factor/correction,</p>
+<script type="math/tex">L_e</script>: the <strong>e</strong>ffective <strong>L</strong>eaf Area Index with <script type="math/tex">L_e = L \cdot\Omega</script> and <script type="math/tex">\Omega</script> the cluming factor/correction,</p>
 <p>
 <script type="math/tex">k(\theta_V)</script>: the extinction coefficient that depends on</p>
 <p>
 <script type="math/tex">G(\theta_V)</script>: the projection function, which in its turn depends on a leaf angle distribution.</p>
+<p>Furthermore, the contact frequency <script type="math/tex">K</script> is defined as <script type="math/tex">K(\theta_V) = G(\theta_V) \cdot L_e = -\log T(\theta_V) \cos \theta_V</script> and is used extensively as observed value to compare with the modelled value.</p>
             </div>
           </div>
           <footer>
@@ -166,7 +169,7 @@ with <script type="math/tex">T(\theta_V)</script>: the mean <strong>t</strong>ra
 
 <!--
 MkDocs version  : 0.12.2
-Docs Build Date : 2015-04-30 09:48:57.945584
+Docs Build Date : 2015-04-30 10:08:37.736065
 -->
 </body>
 </html>
