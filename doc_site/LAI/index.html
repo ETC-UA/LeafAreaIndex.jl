@@ -82,10 +82,16 @@
                         
                             <li><a class="toctree-l4" href="#estimation-methods">Estimation methods</a></li>
                         
-                            <li><a class="toctree-l4" href="#ellipsoidal-leaf-angle-distribution">Ellipsoidal leaf angle distribution</a></li>
-                        
                     
                     </ul>
+                
+            </li>
+        
+
+    
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../clumping/">Clumping</a>
                 
             </li>
         
@@ -145,7 +151,7 @@
 <script type="math/tex">G(\theta_V)</script>: the projection function, which in its turn depends on a leaf angle distribution.</p>
 <p>Further, the contact frequency <script type="math/tex">K</script> is defined as <script type="math/tex">K(\theta_V) = G(\theta_V) \cdot L_e = -\log T(\theta_V) \cos \theta_V</script> and is used as observed value to compare with the modelled value for LAI fitting.</p>
 <h2 id="projection-function">Projection function</h2>
-<p>The projection function accounts for the interaction between the incoming beam of light from direction <script type="math/tex">(\theta_V, \phi_V)</script> with the leaves assuming a certain leaf angle distribution. More specifically, the projection function is the mean projection of a unit foliage area in the direction <script type="math/tex">(\theta_V, \phi_V)</script>.</p>
+<p>The projection function accounts for the interaction between the incoming beam of light from direction <script type="math/tex">(\theta_V, \phi_V)</script> with the leaves assuming a certain leaf angle distribution with leave angles <script type="math/tex">(\theta_L, \phi_L)</script>. More specifically, the projection function is the mean projection of a unit foliage area in the direction <script type="math/tex">(\theta_V, \phi_V)</script>.</p>
 <p>In general the projection function <script type="math/tex">G(\theta_V, \phi_V)</script> is definded as:
 <script type="math/tex; mode=display">G(\theta_V, \phi_V) = \frac{1}{2\pi}\int_0^{2\pi}\int_0^{\pi/2}\lvert\cos\psi\rvert g(\theta_L,\phi_L)\sin\theta_L \mathrm{d}\theta_L\mathrm{d}\phi_L </script>
 with <script type="math/tex">\cos\psi = \cos\theta_V\cos\theta_L + \sin\theta_V\sin\theta_L\cos(\phi_v - \phi_L)</script>.</p>
@@ -173,20 +179,19 @@ with <script type="math/tex">\beta = cos^{-1}(\cot\theta_V\cot\theta_L)</script>
 <script type="math/tex; mode=display"> G(\theta_V, \chi) = \frac{\cos\theta_V\sqrt{\chi^2 + \tan^2\theta_V}}{\chi + 1.702(\chi+1.12)^{-0.708}}</script>
 </p>
 <p><a href="http://www.schleppi.ch/patrick/publi/pdf/atal10b.pdf">Thimonier et al. 2010</a>: If the vertical semi-axis is <script type="math/tex">a</script> and the horizontal semi-axis <script type="math/tex">b</script>, the ellipsoidal leaf angle distribution parameter is defined as <script type="math/tex">\chi = b / a</script>. </p>
-<p>The parameter <script type="math/tex">\chi</script> is directly related to the <strong>a</strong>verage <strong>l</strong>eaf <strong>i</strong>nclination <strong>a</strong>ngle (ALIA) <script type="math/tex">\bar\theta_L</script> through formula (30) in Wang et al 2007<sup id="fnref:Wang2007"><a class="footnote-ref" href="#fn:Wang2007" rel="footnote">1</a></sup>:
+<p>The parameter <script type="math/tex">\chi</script> is directly related to the <strong>a</strong>verage <strong>l</strong>eaf <strong>i</strong>nclination <strong>a</strong>ngle (ALIA) <script type="math/tex">\bar\theta_L</script> through formula (30) in <a href="https://www.researchgate.net/profile/Zhao-Liang_Li/publication/223802149_Comparison_of_leaf_angle_distribution_functions_Effects_on_extinction_coefficient_and_fraction_of_sunlit_foliage/links/0a85e52f1171314efe000000.pdf">Wang et al 2007</a>:
 <script type="math/tex; mode=display">\chi \approx \Big(\frac{\bar\theta_L}{9.65}\Big)^{-0.6061} - 3</script>
 </p>
 <p>As an example we plot the ellipsoidal for different average leaf angles:</p>
-<div class="codehilite"><pre><span class="n">g</span><span class="p">(</span><span class="err">θ</span><span class="n">L</span><span class="p">,</span> <span class="err">χ</span><span class="p">)</span> <span class="o">=</span> <span class="mi">2</span><span class="err">χ</span><span class="o">^</span><span class="mi">3</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="err">θ</span><span class="n">L</span><span class="p">)</span> <span class="o">/</span><span class="p">(</span> <span class="p">(</span><span class="err">χ</span> <span class="o">+</span> <span class="mf">1.774</span><span class="p">(</span><span class="err">χ</span> <span class="o">+</span> <span class="mf">1.182</span><span class="p">)</span><span class="o">^-</span><span class="mf">0.733</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">cos</span><span class="p">(</span><span class="err">θ</span><span class="n">L</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span>  <span class="err">χ</span><span class="o">^</span><span class="mi">2</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="err">θ</span><span class="n">L</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">ALIA_to_x</span><span class="p">(</span><span class="n">ALIA</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">ALIA</span><span class="o">/</span><span class="mf">9.65</span><span class="p">)</span><span class="o">.^-</span><span class="mf">0.6061</span> <span class="o">-</span> <span class="mi">3</span>
-<span class="k">using</span> <span class="n">Winston</span>
-<span class="n">p</span> <span class="o">=</span> <span class="n">plot</span><span class="p">()</span>
-<span class="k">for</span> <span class="n">alia</span> <span class="k">in</span> <span class="n">linspace</span><span class="p">(</span><span class="mi">5</span> <span class="o">*</span><span class="nb">pi</span><span class="o">/</span><span class="mi">180</span><span class="p">,</span> <span class="mi">85</span> <span class="o">*</span><span class="nb">pi</span><span class="o">/</span><span class="mi">180</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-    <span class="n">oplot</span><span class="p">(</span><span class="err">θ</span><span class="n">L</span> <span class="o">-&gt;</span> <span class="n">g</span><span class="p">(</span><span class="err">θ</span><span class="n">L</span><span class="p">,</span> <span class="n">ALIA_to_x</span><span class="p">(</span><span class="n">alia</span><span class="p">)),</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="s">&quot;--&quot;</span><span class="p">)</span>
-<span class="k">end</span>
-<span class="n">title</span><span class="p">(</span><span class="s">&quot;leaf angle distribution </span><span class="se">\\</span><span class="s">theta_L for different average leaf angles&quot;</span><span class="p">)</span>
-<span class="n">ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span> <span class="p">;</span> <span class="n">xlabel</span><span class="p">(</span><span class="s">&quot;leaf angle </span><span class="se">\\</span><span class="s">theta_L&quot;</span><span class="p">)</span>
-</pre></div>
+<pre class="codehilite"><code class="language-julia">g(θL, χ) = 2χ^3 * sin(θL) /( (χ + 1.774(χ + 1.182)^-0.733) * (cos(θL)^2 +  χ^2*sin(θL)^2)^2)
+ALIA_to_x(ALIA) = (ALIA/9.65).^-0.6061 - 3
+using Winston
+p = plot()
+for alia in linspace(5 *pi/180, 85 *pi/180, 10)
+    oplot(θL -&gt; g(θL, ALIA_to_x(alia)), 0, pi/2, &quot;--&quot;)
+end
+title(&quot;leaf angle distribution \\theta_L for different average leaf angles&quot;)
+ylim(0, 5) ; xlabel(&quot;leaf angle \\theta_L&quot;)</code></pre>
 
 
 <p><img alt="ellipsoidal leaf angle distribution" src="../pics/ellips_distr.png" /></p>
@@ -199,10 +204,11 @@ with <script type="math/tex">\beta = cos^{-1}(\cot\theta_V\cot\theta_L)</script>
 <li>Ellipsoidal leaf angle distribution with Lookup Table estimation <code>ellips_LUT</code></li>
 <li>Ellipsoidal leaf angle distribution with optimization estimation <code>ellips_opt</code></li>
 </ul>
+<p>All methods take as argument a PolarImage and a threshold, eg <code>ellips_LUT(polarimg, thresh)</code>.</p>
 <h3 id="zenith-57">Zenith 57</h3>
 <p>At a viewing angle <script type="math/tex">\theta_V</script> of 1 rad ≈ 57.5<script type="math/tex">^o</script> the projection function is almost independent of the leaf angle distribution. </p>
 <p>For example, with the ellipsoidal distribution we get</p>
-<div class="codehilite"><pre>ALIA_to_x(ALIA) = (ALIA/9.65).^-0.6061 - 3
+<pre class="codehilite"><code>ALIA_to_x(ALIA) = (ALIA/9.65).^-0.6061 - 3
 G(θᵥ, χ) = cos(θᵥ) * sqrt(χ^2 + tan(θᵥ)^2) / (χ+1.702*(χ+1.12)^-0.708)
 using Winston
 p = plot()
@@ -212,40 +218,61 @@ end
 θᵥ57 = 1 #in radian
 oplot(θL -&gt; G(θᵥ57, ALIA_to_x(θL)),  0.1, pi/2,&quot;-r&quot;)
 title(&quot;different projection area \G for a range of view angles&quot;)
-xlabel(&quot;average leaf inclination angle \\theta_L &quot;)
-</pre></div>
+xlabel(&quot;average leaf inclination angle \\theta_L &quot;)</code></pre>
 
 
 <p><img alt="Projection function for different average leaf angles" src="../pics/zenith57.png" /></p>
 <p>This method is used for the initial starting point of the <code>ellips_opt</code> method. </p>
-<div class="codehilite"><pre>LAI57 = zenith57(polimg, thresh)
-</pre></div>
+<pre class="codehilite"><code>LAI57 = zenith57(polimg, thresh)</code></pre>
 
 
 <h3 id="millers-method">Miller's method</h3>
 <p>Assuming a constant leaf angle, by integration the effect of <script type="math/tex">G(\theta)</script> disappears (<a href="https://www.researchgate.net/publication/236770486_A_formula_for_average_foliage_density">Miller 1967</a>):
 <script type="math/tex; mode=display">L = 2 \int_0^{\pi/2} -\ln(P_0(\theta))\cos\theta \sin\theta \mathrm{d} \theta</script>
 </p>
-<p>For this method you need the entire viewing angle up to π/2, which might prove difficult for larger zenith angles ([Weiss et al. 2004][Weiss2004]). Furthermore, the integration over the discrete polar distances of each pixel requires an ambiguous choice of grouping consecutive rings.</p>
+<p>For this method you need the entire viewing angle up to π/2, which might prove difficult for larger zenith angles (<a href="http://www.researchgate.net/profile/Inge_Jonckheere/publication/222931516_Review_of_methods_for_in_situ_leaf_area_index_(LAI)_determination_Part_II._Estimation_of_LAI_errors_and_sampling/links/09e4150cefe5a4fea5000000.pdf">Weiss et al. 2004</a>). Furthermore, the integration over the discrete polar distances of each pixel requires an ambiguous choice of grouping consecutive rings.</p>
 <h3 id="langs-method">Lang's method</h3>
 <p>Lang 1986 approximated <script type="math/tex">-\ln(P_0(\theta))\cos\theta = K(\theta) \approx a + b\theta</script> around <script type="math/tex">\theta_V</script> of 1 rad and obtained 
 <script type="math/tex; mode=display"> L = 2(a+b)</script>
 </p>
-<p>We follow [Weiss et al. 2004][Weiss2004] to regress between 25<script type="math/tex">^o</script> and 65<script type="math/tex">^o</script>.</p>
-<h2 id="ellipsoidal-leaf-angle-distribution">Ellipsoidal leaf angle distribution</h2>
-<div class="footnote">
-<hr />
-<ol>
-<li id="fn:Wang2007">
-<p>Wang W.M., Li Z.L. &amp; Su H.B. (2007). Comparison of leaf angle distribution functions: Effects on extinction coefficient and fraction of sunlit foliage. Agricultural and Forest Meteorology, 143, 106-122.&#160;<a class="footnote-backref" href="#fnref:Wang2007" rev="footnote" title="Jump back to footnote 1 in the text">&#8617;</a></p>
-</li>
-</ol>
-</div>
+<p>We follow <a href="http://www.researchgate.net/profile/Inge_Jonckheere/publication/222931516_Review_of_methods_for_in_situ_leaf_area_index_(LAI)_determination_Part_II._Estimation_of_LAI_errors_and_sampling/links/09e4150cefe5a4fea5000000.pdf">Weiss et al. 2004</a> to regress between 25<script type="math/tex">^o</script> and 65<script type="math/tex">^o</script>.</p>
+<h3 id="ellipsoidal-alia-estimation">Ellipsoidal ALIA estimation</h3>
+<p>We can also estimate the parameter <script type="math/tex">\chi</script> of the ellipsoidal leaf distribution together with the LAI. </p>
+<p>We follow <a href="http://www.schleppi.ch/patrick/publi/pdf/atal10b.pdf">Thimonier et al. 2010</a> and use the contact frequency <script type="math/tex">K(\theta_V) = G(\theta_V, \chi)L_e = -\ln[T(\theta_v)] \cos\theta_V</script> as fitting observable because we found most variance over the view zenith range with this variable compared to using <script type="math/tex">\ln T(\theta_V)</script>
+<a href="http://link.springer.com/chapter/10.1007%2F978-94-009-2221-1_14">Norman &amp; Campbell 1989</a> or <script type="math/tex">T(\theta_V) = \exp(-G(\theta_V, \chi)L_e/\cos\theta_V)</script> (<a href="http://www.researchgate.net/profile/Inge_Jonckheere/publication/222931516_Review_of_methods_for_in_situ_leaf_area_index_(LAI)_determination_Part_II._Estimation_of_LAI_errors_and_sampling/links/09e4150cefe5a4fea5000000.pdf">Weiss et al. 2004</a>):</p>
+<pre class="codehilite"><code>ALIA_to_x(ALIA) = (ALIA/9.65).^-0.6061 - 3
+G(θᵥ, χ) = cos(θᵥ) * sqrt(χ^2 + tan(θᵥ)^2) / (χ+1.702*(χ+1.12)^-0.708)
+using Winston
+
+alia = (5:5:85)*π/180
+p = plot()
+
+f(i) = θᵥ -&gt;  G(θᵥ, ALIA_to_x(alia[i]))
+#f(i) = θᵥ -&gt;  exp(-G(θᵥ, ALIA_to_x(alia[i])) / cos(θᵥ))
+#f(i) = θᵥ -&gt;  - G(θᵥ, ALIA_to_x(alia[i])) / cos(θᵥ)
+
+oplot(f(1), 0, π/2-0.1, &quot;-r&quot;)
+for i = 2:length(alia)-1
+    oplot(f(i), 0, π/2-0.1, &quot;--&quot;)
+end
+oplot(f(int(length(alia)/2)), 0, π/2-0.1, &quot;-g&quot;) #pi/4
+oplot(f(length(alia)), 0, π/2-0.1, &quot;-k&quot;)
+ylabel(&quot;projection function G&quot;)
+xlabel(&quot;view angle \\theta_V&quot;)</code></pre>
+
+
+<p><img alt="Different fitting variables" src="../pics/proj_fun.png" /></p>
+<p>Both the Lookup Table approach <code>ellips_LUT(polarimg, thresh)</code> from <a href="http://www.researchgate.net/profile/Inge_Jonckheere/publication/222931516_Review_of_methods_for_in_situ_leaf_area_index_(LAI)_determination_Part_II._Estimation_of_LAI_errors_and_sampling/links/09e4150cefe5a4fea5000000.pdf">Weiss et al. 2004</a> and the optimization method <code>ellips_opt(polarimg, thresh)</code>from <a href="http://www.schleppi.ch/patrick/publi/pdf/atal10b.pdf">Thimonier et al. 2010</a> are implemented. </p>
+<p>We do not weight the different gap fractions per zenith angle as in <a href="http://www.schleppi.ch/patrick/publi/pdf/atal10b.pdf">Thimonier et al. 2010</a>, but we use weighted rings with each a similar amount of pixels. We also use more view zenith rings than in the originals papers because digital cameras have much more pixels these day.</p>
+<p>We find the parameter space to optimize is smooth and can be seen in a heat map with LUT values and 25 closest solutions in red circles:</p>
+<p><img alt="Ellipsoidal LUT parameter space" src="../pics/ellips_space.png" /></p>
             </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../clumping/" class="btn btn-neutral float-right" title="Clumping"/>Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
         <a href="../gapfraction/" class="btn btn-neutral" title="Gapfraction"><span class="icon icon-circle-arrow-left"></span> Previous</a>
@@ -277,13 +304,13 @@ xlabel(&quot;average leaf inclination angle \\theta_L &quot;)
             <a href="https://github.com/ETC-UA/LeafAreaIndex.jl" class="icon icon-github" style="float: left; color: #fcfcfc"> GitHub</a>
         
       <span><a href="../gapfraction/" style="color: #fcfcfc;">&laquo; Previous</a></span>
-      <span style="margin-left: 15px"><a href="" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span style="margin-left: 15px"><a href="../clumping/" style="color: #fcfcfc">Next &raquo;</a></span>
     </span>
 </div>
 
 <!--
 MkDocs version  : 0.12.2
-Docs Build Date : 2015-04-30 16:02:34.696749
+Docs Build Date : 2015-05-03 17:06:05.676295
 -->
 </body>
 </html>

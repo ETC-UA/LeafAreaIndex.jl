@@ -24,7 +24,7 @@ Further, the contact frequency $K$ is defined as $K(\theta_V) = G(\theta_V) \cdo
 
 ## Projection function
 
-The projection function accounts for the interaction between the incoming beam of light from direction $(\theta_V, \phi_V)$ with the leaves assuming a certain leaf angle distribution. More specifically, the projection function is the mean projection of a unit foliage area in the direction $(\theta_V, \phi_V)$.
+The projection function accounts for the interaction between the incoming beam of light from direction $(\theta_V, \phi_V)$ with the leaves assuming a certain leaf angle distribution with leave angles $(\theta_L, \phi_L)$. More specifically, the projection function is the mean projection of a unit foliage area in the direction $(\theta_V, \phi_V)$.
 
 In general the projection function $G(\theta_V, \phi_V)$ is definded as:
 $$G(\theta_V, \phi_V) = \frac{1}{2\pi}\int_0^{2\pi}\int_0^{\pi/2}\lvert\cos\psi\rvert g(\theta_L,\phi_L)\sin\theta_L \mathrm{d}\theta_L\mathrm{d}\phi_L $$
@@ -58,13 +58,9 @@ $$ G(\theta_V, \chi) = \frac{\cos\theta_V\sqrt{\chi^2 + \tan^2\theta_V}}{\chi + 
 
 [Thimonier et al. 2010][Thimonier2010]: If the vertical semi-axis is $a$ and the horizontal semi-axis $b$, the ellipsoidal leaf angle distribution parameter is defined as $\chi = b / a$. 
 
-The parameter $\chi$ is directly related to the __a__verage __l__eaf __i__nclination __a__ngle (ALIA) $\bar\theta_L$ through formula (30) in Wang et al 2007[^Wang2007]:
+The parameter $\chi$ is directly related to the __a__verage __l__eaf __i__nclination __a__ngle (ALIA) $\bar\theta_L$ through formula (30) in [Wang et al 2007][Wang2007]:
 $$\chi \approx \Big(\frac{\bar\theta_L}{9.65}\Big)^{-0.6061} - 3$$
 
-[Thimonier2010]: http://www.schleppi.ch/patrick/publi/pdf/atal10b.pdf
-
-[^Wang2007]:
-    Wang W.M., Li Z.L. & Su H.B. (2007). Comparison of leaf angle distribution functions: Effects on extinction coefficient and fraction of sunlit foliage. Agricultural and Forest Meteorology, 143, 106-122.
 
 As an example we plot the ellipsoidal for different average leaf angles:
 
@@ -89,6 +85,8 @@ This package implements 5 different estimation methods, of which we recommend to
 * Lang's method `lang`
 * Ellipsoidal leaf angle distribution with Lookup Table estimation `ellips_LUT`
 * Ellipsoidal leaf angle distribution with optimization estimation `ellips_opt`
+
+All methods take as argument a PolarImage and a threshold, eg `ellips_LUT(polarimg, thresh)`.
 
 ### Zenith 57
 
@@ -128,4 +126,46 @@ $$ L = 2(a+b)$$
 
 We follow [Weiss et al. 2004][Weiss2004] to regress between 25$^o$ and 65$^o$.
 
-## Ellipsoidal leaf angle distribution
+### Ellipsoidal ALIA estimation
+
+We can also estimate the parameter $\chi$ of the ellipsoidal leaf distribution together with the LAI. 
+
+We follow [Thimonier et al. 2010][Thimonier2010] and use the contact frequency $K(\theta_V) = G(\theta_V, \chi)L_e = -\ln[T(\theta_v)] \cos\theta_V$ as fitting observable because we found most variance over the view zenith range with this variable compared to using $\ln T(\theta_V)$ [Norman & Campbell 1989](http://link.springer.com/chapter/10.1007%2F978-94-009-2221-1_14) or $T(\theta_V) = \exp(-G(\theta_V, \chi)L_e/\cos\theta_V)$ ([Weiss et al. 2004][Weiss2004]):
+
+    ALIA_to_x(ALIA) = (ALIA/9.65).^-0.6061 - 3
+    G(θᵥ, χ) = cos(θᵥ) * sqrt(χ^2 + tan(θᵥ)^2) / (χ+1.702*(χ+1.12)^-0.708)
+    using Winston
+
+    alia = (5:5:85)*π/180
+    p = plot()
+    
+    f(i) = θᵥ ->  G(θᵥ, ALIA_to_x(alia[i]))
+    #f(i) = θᵥ ->  exp(-G(θᵥ, ALIA_to_x(alia[i])) / cos(θᵥ))
+    #f(i) = θᵥ ->  - G(θᵥ, ALIA_to_x(alia[i])) / cos(θᵥ)
+
+    oplot(f(1), 0, π/2-0.1, "-r")
+    for i = 2:length(alia)-1
+        oplot(f(i), 0, π/2-0.1, "--")
+    end
+    oplot(f(int(length(alia)/2)), 0, π/2-0.1, "-g") #pi/4
+    oplot(f(length(alia)), 0, π/2-0.1, "-k")
+    ylabel("projection function G")
+    xlabel("view angle \\theta_V")
+
+![Different fitting variables](/pics/proj_fun.png)
+
+Both the Lookup Table approach `ellips_LUT(polarimg, thresh)` from [Weiss et al. 2004][Weiss2004] and the optimization method `ellips_opt(polarimg, thresh)`from [Thimonier et al. 2010][Thimonier2010] are implemented. 
+
+We do not weight the different gap fractions per zenith angle as in [Thimonier et al. 2010][Thimonier2010], but we use weighted rings with each a similar amount of pixels. We also use more view zenith rings than in the originals papers because digital cameras have much more pixels these day.
+
+We find the parameter space to optimize is smooth and can be seen in a heat map with LUT values and 25 closest solutions in red circles:
+
+![Ellipsoidal LUT parameter space](/pics/ellips_space.png)
+
+
+
+
+
+[Weiss2004]: http://www.researchgate.net/profile/Inge_Jonckheere/publication/222931516_Review_of_methods_for_in_situ_leaf_area_index_(LAI)_determination_Part_II._Estimation_of_LAI_errors_and_sampling/links/09e4150cefe5a4fea5000000.pdf
+[Thimonier2010]: http://www.schleppi.ch/patrick/publi/pdf/atal10b.pdf
+[Wang2007]: https://www.researchgate.net/profile/Zhao-Liang_Li/publication/223802149_Comparison_of_leaf_angle_distribution_functions_Effects_on_extinction_coefficient_and_fraction_of_sunlit_foliage/links/0a85e52f1171314efe000000.pdf

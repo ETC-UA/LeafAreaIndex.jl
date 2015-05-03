@@ -85,6 +85,14 @@
         
 
     
+        
+            <li class="toctree-l1 ">
+                <a class="" href="../clumping/">Clumping</a>
+                
+            </li>
+        
+
+    
 </ul>
 
       </div>
@@ -123,38 +131,33 @@
 <p>For an introduction on LAI we refer to <a href="http://www.researchgate.net/profile/Inge_Jonckheere/publication/222931516_Review_of_methods_for_in_situ_leaf_area_index_(LAI)_determination_Part_II._Estimation_of_LAI_errors_and_sampling/links/09e4150cefe5a4fea5000000.pdf">Weiss et al. 2004</a> and <a href="http://www.schleppi.ch/patrick/publi/pdf/atal10b.pdf">Thimonier et al 2010</a>.</p>
 <h2 id="quick-introduction">Quick Introduction</h2>
 <p>Install the package through</p>
-<div class="codehilite"><pre><span class="n">Pkg</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span><span class="s">&quot;https://github.com/ETC-UA/LeafAreaIndex.jl&quot;</span><span class="p">)</span>
-</pre></div>
+<pre class="codehilite"><code class="language-julia">Pkg.clone(&quot;https://github.com/ETC-UA/LeafAreaIndex.jl&quot;)</code></pre>
 
 
 <p>You construct a PolarImage from a Calibration type and an Image (or in general, a Matrix). The calibration requires the image size, the coordinates of the lens center and the (inverse) projection function. 
 (The projection function maps polar distance ρ [in pixels] on the image to the zenith angle θ [in radians] of the scene and is usually not linear.)</p>
-<div class="codehilite"><pre><span class="k">using</span> <span class="n">Images</span>
-<span class="n">img</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="s">&quot;image.dng&quot;</span><span class="p">)</span>
-<span class="n">imgblue</span> <span class="o">=</span> <span class="n">blue</span><span class="p">(</span><span class="n">img</span><span class="p">)</span> <span class="c">#take the blue channel</span>
-<span class="k">using</span> <span class="n">LeafAreaIndex</span>
-<span class="n">mycameralens</span> <span class="o">=</span> <span class="n">calibrate</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">ci</span><span class="p">,</span> <span class="n">cj</span><span class="p">,</span> <span class="n">fθρ</span><span class="p">,</span> <span class="n">fρθ</span><span class="p">)</span>
-<span class="n">polarimg</span> <span class="o">=</span> <span class="n">PolarImage</span><span class="p">(</span><span class="n">imgblue</span><span class="p">,</span> <span class="n">mycameralens</span><span class="p">)</span>
-</pre></div>
+<pre class="codehilite"><code class="language-julia">using Images
+img = imread(&quot;image.dng&quot;)
+imgblue = blue(img) #take the blue channel
+using LeafAreaIndex
+mycameralens = calibrate(height, width, ci, cj, fθρ, fρθ)
+polarimg = PolarImage(imgblue, mycameralens)</code></pre>
 
 
 <p>The first step is automatical thresholding with the default method Ridler Calvard:</p>
-<div class="codehilite"><pre><span class="n">thresh</span> <span class="o">=</span> <span class="n">threshold</span><span class="p">(</span><span class="n">polarimg</span><span class="p">)</span>
-</pre></div>
+<pre class="codehilite"><code class="language-julia">thresh = threshold(polarimg)</code></pre>
 
 
 <p>The clumping factor can be estimated with the method of Lang Xiang with 45ᵒ segments between view angles θ1 and θ2 using <code>langxiang45(polarimg, thresh, θ1, θ2)</code>. Similarly <code>chencihlar(polarimg, thresh, θ1, θ2)</code> for the Chen Chilar method.</p>
 <p>There are two methods to estimate LAI assuming an ellipsoidal leave angle distribution, both also estimating the Average Leaf Inclination Angle (ALIA). The first one uses a Lookup Table (LUT) and the second one an optimization method.</p>
-<div class="codehilite"><pre><span class="n">LAI1</span> <span class="o">=</span> <span class="n">ellips_LUT</span><span class="p">(</span><span class="n">polarimg</span><span class="p">,</span> <span class="n">thresh</span><span class="p">)</span>
-<span class="n">LAI2</span> <span class="o">=</span> <span class="n">ellips_opt</span><span class="p">(</span><span class="n">polarimg</span><span class="p">,</span> <span class="n">thresh</span><span class="p">)</span>
-</pre></div>
+<pre class="codehilite"><code class="language-julia">LAI1 = ellips_LUT(polarimg, thresh)
+LAI2 = ellips_opt(polarimg, thresh)</code></pre>
 
 
 <h2 id="further-methods">further methods</h2>
 <p>For images taken (vertically upwards) on a domain with slope of eg 10ᵒ and downward to the East, you must include this in your PolarImage.</p>
-<div class="codehilite"><pre><span class="n">myslope</span> <span class="o">=</span> <span class="n">Slope</span><span class="p">(</span><span class="mi">10</span><span class="o">/</span><span class="mi">180</span><span class="o">*</span><span class="nb">pi</span><span class="p">,</span> <span class="nb">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">polarimg</span> <span class="o">=</span> <span class="n">PolarImage</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">mycameralens</span><span class="p">,</span> <span class="n">myslope</span><span class="p">)</span>
-</pre></div>
+<pre class="codehilite"><code class="language-julia">myslope = Slope(10/180*pi, pi/2)
+polarimg = PolarImage(img, mycameralens, myslope)</code></pre>
 
 
 <p>Two more automatic thresholding methods can be used with <code>edge_threshold</code> and <code>minimum_threshhold</code> for the Edge Detection and Minimum algorithm.</p>
@@ -162,10 +165,9 @@
 <p>To access the pixels in a particular zenith range, <code>pixels(polarimg, pi/6, pi/3)</code> will return a vector with pixels quickly, sorted by increasing ρ (and then by polar angles ϕ for identical ρ). A shortcut <code>pixels(polarimg)</code> is translated to <code>pixels(polarimg, 0, pi/2)</code>.</p>
 <p>The <code>segments</code> function can further split these ring pixels in n segments (eg. for clumping calculation). It returns a vector with n elements, each a vector with segment pixels.</p>
 <p>You can also construct an <em>iterator</em> to access a specific zenith range. It will return the pixels on each ring in the range by increasing integer ρ² in a tuple with a vector of polar angles ϕ and a vector of corresponding pixels.</p>
-<div class="codehilite"><pre>for (ρ², ϕ, px) in rings(polarimg, pi/6, pi/3)
+<pre class="codehilite"><code>for (ρ², ϕ, px) in rings(polarimg, pi/6, pi/3)
     # do something with each ρ², ϕ, px variable
-end
-</pre></div>
+end</code></pre>
 
 
 <p>In case of problems or suggestion, don't hesitate to submit an issue through the <a href="https://github.com/ETC-UA/LeafAreaIndex.jl/issues">issue tracker</a> or code suggestions through a <a href="https://github.com/ETC-UA/LeafAreaIndex.jl/pulls">pull request</a>.</p>
@@ -213,7 +215,7 @@ end
 
 <!--
 MkDocs version  : 0.12.2
-Docs Build Date : 2015-04-30 16:02:34.599744
+Docs Build Date : 2015-05-03 17:06:05.640293
 -->
 </body>
 </html>

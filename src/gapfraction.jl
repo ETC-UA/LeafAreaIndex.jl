@@ -80,7 +80,7 @@ function contactfreqs_iterate(pixs::AbstractArray, τs::AbstractArray, thresh, �
     Aθτ = fasthist(τs, -1/Nϕ:τmax/Nϕ:τmax)
 
     iter = 0
-    # initially start with K from whole θ ring 
+    # initially start with contact frequency K from whole θ ring 
     logT = loggapfraction(pixs, thresh)
     K = - logT * cos(θ)
     while iter < max_iter

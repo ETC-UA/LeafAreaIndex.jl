@@ -24,17 +24,19 @@ function gaplengths(polim::PolarImage, thresh, θ1::Real, θ2::Real)
 end
 
 # methods for P approach
+# Probe probability from formulae 17-18, Chen & Cihlar 1995, IEEE
 function probeprob(gaps::Vector{Int})
+    length(gaps) == 0 && return([1])
     sortedgaps = sort(gaps)
-    lmax = sortedgaps[end]
-    P = zeros(Int, lmax)
-    for l = 1:lmax
-        firstind = searchsortedfirst(sortedgaps, l)
+    len_max = sortedgaps[end]
+    P = zeros(Int, len_max)
+    for len = 1:len_max
+        firstind = searchsortedfirst(sortedgaps, len)
         s = 0
         for λ in sortedgaps[firstind:end]
-            s += λ - l
+            s += λ - len
         end 
-        P[l] = s
+        P[len] = s
     end
     return(P/sum(P)) #normalize probability
 end
@@ -69,6 +71,7 @@ Memoize.@memoize function Wp_estimation(polim::PolarImage, thresh;
     gaps = gaplengths(polim, thresh, θ1, θ2)
     Wp =  Wp_estimation(probeprob(gaps); n=Wp_est_n)
 end
+
 function Wp_estimation(P; n=WP_EST_N)
     regrcoef = linreg([1.:n], log(P[1:n]))
     Wp = - regrcoef[1] / abs(regrcoef[2])
@@ -76,6 +79,7 @@ end
 
 function chencihlar(polim::PolarImage, thresh, θ1::Real, θ2::Real; kwargs...)
     @checkθ1θ2
+    # Wp estimation not stable for small zenith angles, so estimate Wp from full image
     if θ1 > WP_EST_θ1
         #TODO add Wp_est_n keyword argument
         Wp = Wp_estimation(probeprob(gaplengths(polim, thresh, θ1, θ2)))
