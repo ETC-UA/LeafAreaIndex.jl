@@ -23,10 +23,18 @@ $$F(\lambda, \theta) = \big[ 1+L_p(\theta)\lambda/W_p(\theta) \big] \exp\Big(-L_
 
 where $\lambda$ represents the gap size. 
 
-$L_p(\theta)$ is estimated from the gap fraction $T(\theta) = F_m(0,\theta)$ through the usual inversion formula to obtain $L_p(\theta) = -\ln T(\theta) = -\ln F(0,\theta)$.
 
 $W_p$ can be estimated from the probe probabilty $P$, i.e. "the probability that a probe of length $l$ falls completely within a sunfleck on the forect floor"([Leblanc et al. 2005][Leblanc2005]):
-$$P(l, \theta) = \exp \Big(-L_p(\theta) -L_p(\theta)l/W_p(\theta) \Big)$$
 $$W_p = - \frac{\ln P(0,\theta)}{\big|\partial \ln P(l, \theta) / \partial l\big|_{l=0}}$$
+
+and 
+$$ P(l) = 1/L_t \sum_{i} H(\lambda_i - l)(\lambda_i - l)$$
+with $\lambda_i$ all the measured gaps, $H$ the [Heaviside step function](https://en.wikipedia.org/wiki/Heaviside_step_function) and $L_t$ for normalization.
+
+$L_p(\theta)$ is initially estimated from the gap fraction $T(\theta) = -\ln T(\theta) = -\ln F(0,\theta)$. Then by reducing $F_m$ to $F_{mr}$ by excluding those gaps too improbably according the theoretical gap size distributin $F$, a new value $L_p$ is set by $L_p = -\ln F_{mr}$ and this procedure is repeated a few steps until the reduced distribution matches the theoretical one.
+
+The clumping correction is then defined as
+$$\Omega_{CC} = \frac{\ln F_m}{\ln F_{mr}}\frac{1-F_{mr}}{1-F_m}$$
+
 
 [Leblanc2005]: http://digitalcommons.unl.edu/cgi/viewcontent.cgi?article=1005&context=nasapub

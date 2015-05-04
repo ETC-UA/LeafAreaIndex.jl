@@ -143,11 +143,16 @@
 </p>
 <p>where <script type="math/tex">\lambda</script> represents the gap size. </p>
 <p>
-<script type="math/tex">L_p(\theta)</script> is estimated from the gap fraction <script type="math/tex">T(\theta) = F_m(0,\theta)</script> through the usual inversion formula to obtain <script type="math/tex">L_p(\theta) = -\ln T(\theta) = -\ln F(0,\theta)</script>.</p>
-<p>
 <script type="math/tex">W_p</script> can be estimated from the probe probabilty <script type="math/tex">P</script>, i.e. "the probability that a probe of length <script type="math/tex">l</script> falls completely within a sunfleck on the forect floor"(<a href="http://digitalcommons.unl.edu/cgi/viewcontent.cgi?article=1005&amp;context=nasapub">Leblanc et al. 2005</a>):
-<script type="math/tex; mode=display">P(l, \theta) = \exp \Big(-L_p(\theta) -L_p(\theta)l/W_p(\theta) \Big)</script>
 <script type="math/tex; mode=display">W_p = - \frac{\ln P(0,\theta)}{\big|\partial \ln P(l, \theta) / \partial l\big|_{l=0}}</script>
+</p>
+<p>and 
+<script type="math/tex; mode=display"> P(l) = 1/L_t \sum_{i} H(\lambda_i - l)(\lambda_i - l)</script>
+with <script type="math/tex">\lambda_i</script> all the measured gaps, <script type="math/tex">H</script> the <a href="https://en.wikipedia.org/wiki/Heaviside_step_function">Heaviside step function</a> and <script type="math/tex">L_t</script> for normalization.</p>
+<p>
+<script type="math/tex">L_p(\theta)</script> is initially estimated from the gap fraction <script type="math/tex">T(\theta) = -\ln T(\theta) = -\ln F(0,\theta)</script>. Then by reducing <script type="math/tex">F_m</script> to <script type="math/tex">F_{mr}</script> by excluding those gaps too improbably according the theoretical gap size distributin <script type="math/tex">F</script>, a new value <script type="math/tex">L_p</script> is set by <script type="math/tex">L_p = -\ln F_{mr}</script> and this procedure is repeated a few steps until the reduced distribution matches the theoretical one.</p>
+<p>The clumping correction is then defined as
+<script type="math/tex; mode=display">\Omega_{CC} = \frac{\ln F_m}{\ln F_{mr}}\frac{1-F_{mr}}{1-F_m}</script>
 </p>
             </div>
           </div>
@@ -191,7 +196,7 @@
 
 <!--
 MkDocs version  : 0.12.2
-Docs Build Date : 2015-05-03 17:06:05.704296
+Docs Build Date : 2015-05-04 19:09:52.077825
 -->
 </body>
 </html>
