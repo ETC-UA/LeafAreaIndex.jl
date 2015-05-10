@@ -16,6 +16,7 @@ pages:
 # Needs an `index.md` file, otherwise readthedocs will fall back to README.md
 - [index.md]
 - [quick_intro.md]
+- [calibration.md]
 - [gapfraction.md]
 - [LAI.md]
 - [clumping.md]
