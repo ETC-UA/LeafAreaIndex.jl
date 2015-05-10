@@ -2,11 +2,11 @@
 
 The necessary calibration of the camera & lens setup requires two parts: the lens projection function and the lens center. Both are required to map the pixels of the picture to corresponding polar coordinates of the scene.
 
-The lens projection function is assumed to have the same shape for every lens type, but different pixel radius for 180$^o$ of each specific lens with camera setup. This means you can simply take the parameters of the projection function for your lens type and multiply by the visible radius. 
+The lens projection function is assumed to have the same shape for every lens type, but different pixel radius for the 180$^o$ viewing circle of each specific lens with camera setup. This means you can simply take the parameters of the generic projection function for your lens type and multiply by the visible radius. 
 
 The lens center is assumed different for each different lens with camera, even between same lens type and camera type. However, determining the lens center is straightforward.
 
-For the following calibration methods we recommend for pixel coordinate determination of calibration images to use the [ImageView julia package](https://github.com/timholy/ImageView.jl) or the free software [paint.net](http://www.getpaint.net/).
+To determine pixel coordinates of calibration images we recommend to use the [ImageView julia package](https://github.com/timholy/ImageView.jl) or the free software [paint.net](http://www.getpaint.net/).
 
 ## Lens Center
 
