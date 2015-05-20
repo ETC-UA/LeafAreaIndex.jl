@@ -1,6 +1,9 @@
 using LeafAreaIndex
 using Base.Test
 
+
+## CALIBRATION ##
+
 testimg1 = reshape([1:25],5,5)
 Rmax1 = 2
 test1cal = calibrate(5,5,3,3,θ->2*Rmax1*θ/π, ρ->ρ*π/2/Rmax1)
@@ -19,3 +22,13 @@ test1cal = calibrate(5,5,3,3,θ->2*Rmax1*θ/π, ρ->ρ*π/2/Rmax1)
 
 @test test1cal.ρ²sort == Uint32[0,1,1,1,1,2,2,2,2,4,4,4,4]
 @test_approx_eq test1cal.ϕsort [0, -π/2:π/2:π, -3π/4:π/2:3π/4, -π/2:π/2:π]
+
+
+## THRESHOLDING ##
+
+testimg2 = .5 * ones(FixedPointNumbers.Ufixed16,5,5)
+testimg2[2:4, 2:4] = 0.7
+testimg2[3,3] = 1
+@test minimum_threshold(t1) > 0.5
+testimg2[3,3] = 0
+@test minimum_threshold(t1) < 0.5
