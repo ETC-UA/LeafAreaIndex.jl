@@ -4,9 +4,9 @@ using Base.Test
 
 ## CALIBRATION ##
 
-testimg1 = reshape([1:25],5,5)
+testimg1 = reshape([1:25], 5, 5)
 Rmax1 = 2
-test1cal = calibrate(5,5,3,3,θ->2*Rmax1*θ/π, ρ->ρ*π/2/Rmax1)
+test1cal = calibrate(5, 5, 3, 3, θ -> 2 * Rmax1 * θ / π, ρ -> ρ * π/2 / Rmax1)
 
 @test_approx_eq test1cal.fθρ(0) 0
 @test_approx_eq test1cal.fρθ(0) 0
@@ -26,9 +26,7 @@ test1cal = calibrate(5,5,3,3,θ->2*Rmax1*θ/π, ρ->ρ*π/2/Rmax1)
 
 ## THRESHOLDING ##
 
-testimg2 = .5 * ones(FixedPointNumbers.Ufixed16,5,5)
+testimg2 = 0.5 * ones(FixedPointNumbers.Ufixed16, 5, 5)
 testimg2[2:4, 2:4] = 0.7
-testimg2[3,3] = 1
-@test minimum_threshold(t1) > 0.5
-testimg2[3,3] = 0
-@test minimum_threshold(t1) < 0.5
+testimg2[3, 3] = 1
+@test minimum_threshold(testimg2) > 0.5
