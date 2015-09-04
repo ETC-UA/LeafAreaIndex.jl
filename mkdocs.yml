@@ -14,9 +14,9 @@ extra_javascript: ['https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX
 
 pages:
 # Needs an `index.md` file, otherwise readthedocs will fall back to README.md
-- [index.md]
-- [quick_intro.md]
-- [calibration.md]
-- [gapfraction.md]
-- [LAI.md]
-- [clumping.md]
+- LeafAreaIndex: index.md
+- Quick Intro: quick_intro.md
+- Calibration: calibration.md
+- Gap Fraction: gapfraction.md
+- LAI Inversion: LAI.md
+- Clumping: clumping.md
