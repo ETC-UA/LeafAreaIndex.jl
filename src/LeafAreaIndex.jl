@@ -5,9 +5,9 @@ import FixedPointNumbers, ArrayViews, Optim, Memoize, LsqFit, FastAnonymous
 VERSION < v"0.4-" && using Docile
 @docstrings
 
-export calibrate_center, PolarImage, pixels, gapfraction, contactfreq, threshold,
+export calibrate, PolarImage, pixels, gapfraction, contactfreq, threshold,
        edge_threshold, minimum_threshold, RidlerCalvard, zenith57, miller, lang,
-       langxiang45, Slope, chencihlar, ellips_LUT, ellips_opt
+       langxiang45, Slope, chencihlar, ellips_LUT, ellips_opt, calibrate_center
 
 # reoccuring argument checks
 macro checkθ1θ2()
