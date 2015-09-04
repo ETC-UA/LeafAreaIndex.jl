@@ -5,9 +5,9 @@ docs_dir: 'docs'
 site_dir: 'doc_site'
 theme: readthedocs
 
-#markdown_extensions: [mathjax] 
+#markdown_extensions: [mathjax]
 #mdx_math.py comes with a setup.py script
-markdown_extensions: [math, fenced_code, codehilite, footnotes]
+markdown_extensions: [mdx_math, fenced_code, codehilite, footnotes]
 
 # the url needs to come before the custom .js script
 extra_javascript: ['https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML','mathjaxhelper.js']
