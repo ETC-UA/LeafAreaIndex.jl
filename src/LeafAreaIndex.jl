@@ -5,8 +5,8 @@ import FixedPointNumbers, ArrayViews, Optim, Memoize, LsqFit, FastAnonymous
 VERSION < v"0.4-" && using Docile
 @docstrings
 
-export calibrate, PolarImage, pixels, gapfraction, contactfreq, threshold,
-       edge_threshold, minimum_threshold, RidlerCalvard, zenith57, miller, lang, 
+export calibrate_center, PolarImage, pixels, gapfraction, contactfreq, threshold,
+       edge_threshold, minimum_threshold, RidlerCalvard, zenith57, miller, lang,
        langxiang45, Slope, chencihlar, ellips_LUT, ellips_opt
 
 # reoccuring argument checks
@@ -29,7 +29,7 @@ Base.empty!(sm::StreamMean) = StreamMean()
 
 # A fast histogram method derived from julialang PR #8952. Used in thresholding
 # and slope adjustment.
-function fasthist(img::AbstractVector, edg::Range)    
+function fasthist(img::AbstractVector, edg::Range)
     n = length(edg) - 1
     histcount = zeros(Int, n)
     step(edg) <= 0 && error("step(edg) must be positive")
@@ -54,5 +54,6 @@ include("gapfraction.jl")
 include("inversion.jl")
 include("clumping.jl")
 include("ChenCihlar.jl")
+include("calibration.jl")
 
 end # module
