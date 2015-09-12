@@ -1,4 +1,5 @@
-using Base.Graphics: Point, norm
+using Graphics: Point, norm
+
 using Optim
 using DataFrames
 import Winston

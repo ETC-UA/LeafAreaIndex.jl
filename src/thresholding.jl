@@ -26,7 +26,7 @@ function RidlerCalvard(gray)
                 highcount += 1
             end
         end
-        highmean/highcount, lowmean/lowcount
+        return (highmean / highcount, lowmean / lowcount)
     end
 
     thresh = mean(gray)
@@ -35,7 +35,7 @@ function RidlerCalvard(gray)
     while count < RIDLER_CALVARD_MAX_ITER        
         high, low  = highlowmean(gray, thresh)
         thresh_old = thresh
-        thresh = (high + low)/2
+        thresh = (high + low) / 2
         abs(thresh - thresh_old) < RIDLER_CALVARD_TOL && break
         count += 1
     end
@@ -104,7 +104,7 @@ end
 
 function edge_threshold(gray)
     # maximization so use negative sign
-    res = Optim.optimize(x->-edgefoptim(gray, x), 0.01, 0.99)
+    res = Optim.optimize(x -> -edgefoptim(gray, x), 0.01, 0.99)
     res.minimum
 end
 
@@ -188,17 +188,17 @@ function smooth_hist!{T<:FloatingPoint}(hc::AbstractArray{T})
     c = hc[2]
     #assume hc[0] = 0 as in paper
     hc[1] = (prev + c)/3
-    @inbounds for i = 2:length(hc)-1        
+    @inbounds for i = 2:(length(hc) - 1)
         nxt = hc[i+1]
-        hc[i] = (prev + c + nxt)/3
+        hc[i] = (prev + c + nxt) / 3
         prev = c 
         c = nxt
     end
 end
 # precision does not seem to increase by increasing binsize
 function minimum_threshold(img; bins=256, maxiter=10_000)       
-    hist_range = -1/(bins-1):1/(bins-1):1
-    counts = fasthist(reshape(img,length(img)), hist_range)
+    hist_range = -1 / (bins-1) : 1 / (bins-1) : 1
+    counts = fasthist(reshape(img, length(img)), hist_range)
     counts = float(counts) # required for convergence!
     cnt = 0
     while cnt < maxiter

@@ -4,7 +4,7 @@ using Base.Test
 
 ## CALIBRATION ##
 
-testimg1 = reshape([1:25], 5, 5)
+testimg1 = reshape(collect(1:25), 5, 5)
 Rmax1 = 2
 test1cal = calibrate(5, 5, 3, 3, θ -> 2 * Rmax1 * θ / π, ρ -> ρ * π/2 / Rmax1)
 

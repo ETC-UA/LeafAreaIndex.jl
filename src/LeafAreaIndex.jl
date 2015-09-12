@@ -2,9 +2,6 @@ module LeafAreaIndex
 
 import FixedPointNumbers, ArrayViews, Optim, Memoize, LsqFit, FastAnonymous
 
-VERSION < v"0.4-" && using Docile
-@docstrings
-
 export calibrate, PolarImage, Slope,
     pixels, gapfraction, contactfreq,
     threshold, edge_threshold, minimum_threshold, RidlerCalvard,
@@ -25,8 +22,8 @@ immutable StreamMean
     streamsum::Float64
     len::Int
 end
-StreamMean() = StreamMean(0.,0)
-update(sm::StreamMean, term) = StreamMean(sm.streamsum + term, sm.len+1)
+StreamMean() = StreamMean(0.0, 0)
+update(sm::StreamMean, term) = StreamMean(sm.streamsum + term, sm.len + 1)
 Base.mean(sm::StreamMean) = sm.streamsum / sm.len
 Base.empty!(sm::StreamMean) = StreamMean()
 
@@ -37,7 +34,7 @@ function fasthist(img::AbstractVector, edg::Range)
     histcount = zeros(Int, n)
     step(edg) <= 0 && error("step(edg) must be positive")
     for pixel in img
-        f = (pixel - first(edg))/step(edg)
+        f = (pixel - first(edg)) / step(edg)
         if 0 < f <= n
             histcount[iceil(f)] += 1
         end

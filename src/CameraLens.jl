@@ -99,26 +99,26 @@ function check_calibration_inputs(size1, size2, ci::Int, cj::Int, fθρ::Functio
 end
 
 # CameraLens constructor function
-function calibrate(size1, size2, ci::Int, cj::Int, fθρ::Function, fρθ::Function)
+function calibrate(size1::Int, size2::Int, ci::Int, cj::Int, fθρ::Function, fρθ::Function)
 
     check_calibration_inputs(size1, size2, ci, cj, fθρ, fρθ)
     
     ρ² = zeros(Uint32, size1, size2)
     ϕ = zeros(Float64, size1, size2)
     for j = 1:size2
-        @simd for i = 1:size1
+        @fastmath @inbounds @simd for i = 1:size1
             x = j - cj
             y = ci - i
             ρ²[i,j] = x^2 + y^2
-            ϕ[i,j] = atan2(y,x)
+            ϕ[i,j] = atan2(y, x)
         end
     end
-    ϕ[ci,cj] = 0. #fix ϕ at center
+    ϕ[ci, cj] = 0.0 #fix ϕ at center
 
     # sort by increasing ρ², then by increasing ϕ
-    ind = sortperm(reshape(ρ²+ϕ/10, length(ρ²))) #this takes most time
+    ind = sortperm(reshape(ρ² + ϕ / 10, length(ρ²))) #this takes most time
     ρ²sort = ρ²[ind]
-    ρmax = iround(fθρ(π/2))
+    ρmax = round(Int, fθρ(π/2))
     ρ²indmax = searchsortedlast(ρ²sort, ρmax^2)
     ρ²sort = ρ²sort[1:ρ²indmax]
     ind = ind[1:ρ²indmax]
