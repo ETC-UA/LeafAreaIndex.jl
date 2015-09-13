@@ -137,40 +137,38 @@ function millerrings(polim::PolarImage, thresh::Real; kwargs...)
 end
 
 
-##
 ## Ellipsoidal
-##
+## -----------
+"Ellipsoidal projection function, formula (A.6) Thimonier et al. 2010"
+G(θᵥ, χ) = cos(θᵥ) * sqrt(χ^2 + tan(θᵥ)^2) / (χ + 1.702 * (χ + 1.12)^-0.708)
 
-# Assuming an ellipsoidal leaf angle distribution, we use the inverse model to
+"function to convert ALIA to ellipsoidal parameter χ, formula (30) in Wang et al 2007"
+ALIA_to_x(ALIA) = (ALIA / 9.65).^-0.6061 - 3
+
+"The model that links ALIA and LAI with contact frequency K"
+function model_ellips(θmid::Vector{Float64}, params::Vector{Float64})
+    alia, L = params
+    K = Float64[L * G(θᵥ, ALIA_to_x(alia)) for θᵥ in θmid]
+end
+
+"""
+# Assuming an ellipsoidal leaf angle distribution (with one parameter), we use the inverse model to
 # estimate the average leaf inclination angle (ALIA) and Leaf Area Index (LAI)
 # from the observed gap fraction per view zenith angle.
 
-# First method using optimization
-function ellips_opt(polim::PolarImage, Nrings::Integer, thresh; θmax=θMAX)
+This method uses a curve fitting technique to find the optimal values for the leaf angle
+distribution parameter ALIA and the LAI.
+"""
+function ellips_opt(θedges::Vector{Real}, θmid::Vector{Float64}, K::Vector{Float64}, 
+                    LAI_init::Float64)
 
-    # Ellipsoidal projection function, formula (A.6) Thimonier et al. 2010
-    G(θᵥ, χ) = cos(θᵥ) * sqrt(χ^2 + tan(θᵥ)^2) / (χ+1.702*(χ+1.12)^-0.708)
-
-    # function to convert ALIA to ellipsoidal parameter χ,
-    # formula (30) in Wang et al 2007
-    ALIA_to_x(ALIA) = (ALIA/9.65).^-0.6061 - 3
-
-    θedges, θmid, K = contactfreqs(polim, 0., θmax, Nrings, thresh)
-
-
-    function model(θmid, params)
-        alia, L = params
-        Float64[L * G(θᵥ, ALIA_to_x(alia)) for θᵥ in θmid]
-    end
-
-    # starting point for optimization
-    L_init = zenith57(polim, thresh)
-    fitfunalia(alia) = sum((model(θmid, [alia, L_init]) .- K).^2)
-    aliares = Optim.optimize(fitfunalia, 0.1, pi/2-.1)
+    # Find initial value for ALIA
+    fitfunalia(alia) = sum((model_ellips(θmid, [alia, LAI_init]) .- K).^2)
+    aliares = Optim.optimize(fitfunalia, 0.1, pi/2 - 0.1)
     ALIA_init = aliares.minimum
 
     try
-        res = LsqFit.curve_fit(model, θmid, K, [ALIA_init, L_init])
+        res = LsqFit.curve_fit(model_ellips, θmid, K, [ALIA_init, LAI_init])
         ALIA, LAI = res.param
         return LAI
     catch y
@@ -179,10 +177,10 @@ function ellips_opt(polim::PolarImage, Nrings::Integer, thresh; θmax=θMAX)
             # parameter space, use Optim.fminbox.
             # TODO register MinFinder and use minfinder
             lower = [0.1, 0.2]
-            upper = [pi/2-0.1, 9]
-            fitfun(x) = sum((K .- model(θmid,x)).^2)
+            upper = [pi/2 - 0.1, 9]
+            fitfun(x) = sum((K .- model_ellips(θmid,x)).^2)
             fitdf = fitdf = Optim.DifferentiableFunction(fitfun)
-            res = Optim.fminbox(fitdf, [ALIA_init, L_init], lower, upper)
+            res = Optim.fminbox(fitdf, [ALIA_init, LAI_init], lower, upper)
             ALIA, LAI = res.minimum
             return LAI
         else
@@ -192,58 +190,62 @@ function ellips_opt(polim::PolarImage, Nrings::Integer, thresh; θmax=θMAX)
     error("ellips_opt did not terminate normally")
 end
 
+function ellips_opt(polim::PolarImage, Nrings::Integer, thresh; θmax=θMAX)
+
+    θedges, θmid, K = contactfreqs(polim, 0.0, θmax, Nrings, thresh)
+    
+    # Find inital value for LAI for optimization
+    LAI_init = zenith57(polim, thresh)
+
+    ellips_opt(θedges, θmid, K, LAI_init)
+end
+
 function ellips_opt(polim::PolarImage, thresh::Real; θmax=θMAX)
-    Nrings = iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS)
+    Nrings = ceil(Int, polim.cl.fθρ(pi/2) / MILLER_GROUPS)
     ellips_opt(polim, Nrings, thresh; θmax=θmax)
 end
 
-# Second method using Lookup Table (LUT)
-# type to hold each element of the LUT
+"Holds each element of the ellipsoidal Lookup Table method `ellips_LUT`."
 immutable LUTel
     alia::Float64
     LAI::Float64
     modelled::Array{Float64}
 end
 
-function ellips_LUT(polim::PolarImage, Nrings::Integer, thresh; θmax=θMAX,
-                    Nlut::Integer=LUT_POINTS, Nmed::Integer=LUT_NMEDIAN)
-
-    # TODO precalculate LUT
-    # TODO refactor because same begin as `ellips_opt`?
-
-    # Ellipsoidal projection function, formula (A.6) Thimonier et al. 2010
-    G(θᵥ, χ) = cos(θᵥ) * sqrt(χ^2 + tan(θᵥ)^2) / (χ+1.702*(χ+1.12)^-0.708)
-
-    # function to convert ALIA to ellipsoidal parameter χ,
-    # formula (30) in Wang et al 2007
-    ALIA_to_x(ALIA) = (ALIA/9.65).^-0.6061 - 3
-
-    θedges, θmid, K = contactfreqs(polim, 0., pi/2, Nrings, thresh)
-
-    function model(θmid, params)
-        alia, L = params
-        Float64[L * G(θᵥ, ALIA_to_x(alia)) for θᵥ in θmid]
-    end
-
-    # As in paper, populate LUT randomly.
+"""Populates a Lookup Table (Weiss 2004) with random contact frequencies for a 
+range of ALIA and LAI values"""
+function populateLUT(θmid::Vector{Float64}; Nlut = LUT_POINTS)
+    LAI_max = 9.0
+    LUT = Array(LUTel, Nlut)
+    alia_max = pi/2 - .001 #against possible instability at π/2
+    # As in paper [Weiss2004], populate LUT randomly.
     # TODO consider using Sobol pseudorandom numbers for consistency.
-    function populateLUT(Nlut, model; LAI_max = 9.)
-        LUT = Array(LUTel, Nlut)
-        alia_max = pi/2 - .001 #against possible instability at π/2
-        for i = 1:Nlut
-            alia = rand() * alia_max
-            LAI = rand() * LAI_max
-            modelled = model(θmid, [alia, LAI])
-            LUT[i] = LUTel(alia, LAI, modelled)
-        end
-        LUT
+    for i = 1:Nlut
+        alia = rand() * alia_max
+        LAI = rand() * LAI_max
+        modelled = model_ellips(θmid, [alia, LAI])
+        LUT[i] = LUTel(alia, LAI, modelled)
     end
+    return LUT
+end
 
-    LUT = populateLUT(Nlut, model)
+"""
+Assuming an ellipsoidal leaf angle distribution (with one parameter), we use the 
+inverse model to
+estimate the average leaf inclination angle (ALIA) and Leaf Area Index (LAI)
+from the observed gap fraction per view zenith angle.
+
+This method uses a Lookup Table (LUT) for the leaf angle distribution parameter 
+ALIA and the LAI, following [Weiss2004](http://www.researchgate.net/profile/Inge_Jonckheere/publication/222931516_Review_of_methods_for_in_situ_leaf_area_index_(LAI)_determination_Part_II._Estimation_of_LAI_errors_and_sampling/links/09e4150cefe5a4fea5000000.pdf).
+"""
+function ellips_LUT(θmid::Vector{Float64}, K::Vector{Float64};
+                    Nlut::Int = LUT_POINTS, Nmed::Integer=LUT_NMEDIAN)
+
+    LUT = populateLUT(θmid; Nlut = Nlut)
 
     # create fitness function against observed contact frequencies
     LUTdiff = zeros(Float64, Nlut)
-    for i = 1:length(LUT)
+    for i in eachindex(LUT)
         # errfun as keyword argument does not accept FastAnonymous, so use SSE.
         #LUTdiff[i] = sum(map(errfun, LUT[i].modelled .- K))
         LUTdiff[i] = sum((LUT[i].modelled .- K).^2)
@@ -254,7 +256,15 @@ function ellips_LUT(polim::PolarImage, Nrings::Integer, thresh; θmax=θMAX,
     LUT_LAI = median([el.LAI for el in LUT[LUTsortind[1:Nmed]]])
 end
 
+function ellips_LUT(polim::PolarImage, Nrings::Integer, thresh; θmax=θMAX,
+                    Nlut::Int=LUT_POINTS, Nmed::Integer=LUT_NMEDIAN)
+
+    θedges, θmid, K = contactfreqs(polim, 0.0, θmax, Nrings, thresh)
+
+    ellips_LUT(θmid, K; Nlut = Nlut, Nmed = Nmed)
+end
+
 function ellips_LUT(polim::PolarImage, thresh::Real; kwargs...)
-    Nrings = iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS)
+    Nrings = ceil(Int, polim.cl.fθρ(pi/2) / MILLER_GROUPS)
     ellips_LUT(polim, Nrings, thresh; kwargs...)
 end

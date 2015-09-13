@@ -28,16 +28,17 @@ The projection function accounts for the interaction between the incoming beam o
 
 In general the projection function $G(\theta_V, \phi_V)$ is definded as:
 $$G(\theta_V, \phi_V) = \frac{1}{2\pi}\int_0^{2\pi}\int_0^{\pi/2}\lvert\cos\psi\rvert g(\theta_L,\phi_L)\sin\theta_L \mathrm{d}\theta_L\mathrm{d}\phi_L $$
-with $\cos\psi = \cos\theta_V\cos\theta_L + \sin\theta_V\sin\theta_L\cos(\phi_v - \phi_L)$.
+with $\cos\psi = \cos\theta_V\cos\theta_L + \sin\theta_V\sin\theta_L\cos(\phi_V - \phi_L)$.
 
 For forest canopies the azimuth leaf angle $\phi_L$ distribution is often assumed constant which reduces $G$ to
 $$G(\theta_V) = \int_0^{\pi/2}A(\theta_V,\theta_L)g(\theta_L)\mathrm{d}\theta_L$$
-with a direction function $A$ 
+
+with a direction function $A$: 
 $$A(\theta_V, \theta_L) = \begin{cases} 
     \cos\theta_V\cos\theta_L, & \quad\lvert\cot\theta_V\cot\theta_L\rvert>1 \\ 
     \cos\theta_V\cos\theta_L[1+\tfrac{2}{\pi}(\tan\beta - \beta)], &\quad\text{otherwise}
 \end{cases}$$
-with $\beta = cos^{-1}(\cot\theta_V\cot\theta_L)$
+with $\beta = cos^{-1}(\cot\theta_V\cot\theta_L)$.
 
 The projection function $G(\theta_V)$ as well as the leaf angle distribution function $g(\theta_L)$ must obey the following normalization functions:
 $$\int_0^{\pi/2}G(\theta_V)\sin\theta_V\mathrm{d}\theta_V = \tfrac{1}{2}$$
@@ -47,14 +48,14 @@ $$\int_0^{\pi/2}g(\theta_V)\sin\theta_V\mathrm{d}\theta_V = 1$$
 
 The standard leaf angle distribution is the _ellipsoidal_ distribution with 1 parameter $\chi$:
 
-$$g(\theta_L, \chi) = \frac{2\chi^3\sin\theta_L}{D(\cos^2\theta_L + \chi^2\sin^2\theta_L)^2} $$ 
+$$g(\theta_L; \chi) = \frac{2\chi^3\sin\theta_L}{D(\cos^2\theta_L + \chi^2\sin^2\theta_L)^2} $$ 
 
 with $D \approx \chi + 1.774(\chi+1.182)^{-0.733}$.
 
-The resulting projection function then become (formula(A.6) [Thimonier et al. 2010][Thimonier2010]):
+The resulting projection function then becomes (formula(A.6) [Thimonier et al. 2010][Thimonier2010]):
 
 
-$$ G(\theta_V, \chi) = \frac{\cos\theta_V\sqrt{\chi^2 + \tan^2\theta_V}}{\chi + 1.702(\chi+1.12)^{-0.708}}$$
+$$ G(\theta_V; \chi) = \frac{\cos\theta_V\sqrt{\chi^2 + \tan^2\theta_V}}{\chi + 1.702(\chi+1.12)^{-0.708}}$$
 
 [Thimonier et al. 2010][Thimonier2010]: If the vertical semi-axis is $a$ and the horizontal semi-axis $b$, the ellipsoidal leaf angle distribution parameter is defined as $\chi = b / a$. 
 
@@ -130,7 +131,9 @@ We follow [Weiss et al. 2004][Weiss2004] to regress between 25$^o$ and 65$^o$.
 
 We can also estimate the parameter $\chi$ of the ellipsoidal leaf distribution together with the LAI. 
 
-We follow [Thimonier et al. 2010][Thimonier2010] and use the contact frequency $K(\theta_V) = G(\theta_V, \chi)L_e = -\ln[T(\theta_v)] \cos\theta_V$ as fitting observable because we found most variance over the view zenith range with this variable compared to using $\ln T(\theta_V)$ [Norman & Campbell 1989](http://link.springer.com/chapter/10.1007%2F978-94-009-2221-1_14) or $T(\theta_V) = \exp(-G(\theta_V, \chi)L_e/\cos\theta_V)$ ([Weiss et al. 2004][Weiss2004]):
+We follow [Thimonier et al. 2010][Thimonier2010] and use the contact frequency $K$, with 
+$$K(\theta_V) = G(\theta_V, \chi)L_e = -\ln[T(\theta_v)] \cos\theta_V$$, 
+as the fitting observable. We found more variance over the view zenith range with $K$ (plot below) compared to using $\ln T(\theta_V)$ (as [Norman & Campbell 1989](http://link.springer.com/chapter/10.1007%2F978-94-009-2221-1_14)) or $T(\theta_V) = \exp(-G(\theta_V, \chi)L_e/\cos\theta_V)$ (as [Weiss et al. 2004][Weiss2004]).
 
     ALIA_to_x(ALIA) = (ALIA/9.65).^-0.6061 - 3
     G(θᵥ, χ) = cos(θᵥ) * sqrt(χ^2 + tan(θᵥ)^2) / (χ+1.702*(χ+1.12)^-0.708)
@@ -140,6 +143,7 @@ We follow [Thimonier et al. 2010][Thimonier2010] and use the contact frequency $
     p = plot()
     
     f(i) = θᵥ ->  G(θᵥ, ALIA_to_x(alia[i]))
+    # uncomment below for comparison
     #f(i) = θᵥ ->  exp(-G(θᵥ, ALIA_to_x(alia[i])) / cos(θᵥ))
     #f(i) = θᵥ ->  - G(θᵥ, ALIA_to_x(alia[i])) / cos(θᵥ)
 

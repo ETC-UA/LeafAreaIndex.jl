@@ -1,6 +1,7 @@
 module LeafAreaIndex
 
 import FixedPointNumbers, ArrayViews, Optim, Memoize, LsqFit, FastAnonymous
+using Compat
 
 export calibrate, PolarImage, Slope,
     pixels, gapfraction, contactfreq,
@@ -8,6 +9,9 @@ export calibrate, PolarImage, Slope,
     zenith57, miller, lang, ellips_LUT, ellips_opt,
     langxiang45, chencihlar,
     calibrate_center, calibrate_projfun
+
+# Keep compatibility with v0.3 where possible
+VERSION < v"0.4-" && using Docile
 
 # reoccuring argument checks
 macro checkθ1θ2()
@@ -17,7 +21,7 @@ macro checkθ1θ2()
     end
 end
 
-# Specialed type for immutable streaming sum, based on PR #18 from StreamStats.jl
+"Specialed type for immutable streaming sum, based on PR #18 from StreamStats.jl"
 immutable StreamMean
     streamsum::Float64
     len::Int
