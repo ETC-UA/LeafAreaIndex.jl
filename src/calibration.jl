@@ -2,6 +2,7 @@ using Graphics: Point, norm
 
 using Optim
 using DataFrames
+# TODO use Gadfly or Compose instead of Winston, b/c it will not precompile
 import Winston
 
 # some auxilary functions
