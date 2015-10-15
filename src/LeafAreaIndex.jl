@@ -39,7 +39,7 @@ function fasthist(img::AbstractVector, edg::Range)
     for pixel in img
         f = (pixel - first(edg)) / step(edg)
         if 0 < f <= n
-            histcount[iceil(f)] += 1
+            histcount[ceil(Int, f)] += 1
         end
     end
     histcount
