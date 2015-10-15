@@ -4,7 +4,7 @@
 # Useful for quickly accessing polar rings and segments.
 # This is Camera + Lens dependent, but it's the same for each of its pictures, 
 # so ρ² and ϕ only need to be (pre)calculated per camera+lens once.
-# (Note Uint32 sufficient to store ρ²).
+# (Note UInt32 sufficient to store ρ²).
 # We assume the lens has at least 180ᵒ field of view.
 immutable CameraLens
     size1::Int #number of rows in picture (heigth)
@@ -13,21 +13,21 @@ immutable CameraLens
     cj::Int
     fθρ::Function           #projection function θ → ρ (θ in [0,π/2], ρ in pixels)
     fρθ::Function           #inverse projection function ρ → θ
-    #ρ²::Array{Uint32,2}     #squared distance to center for each point
+    #ρ²::Array{UInt32,2}     #squared distance to center for each point
     #ϕ::Array{Float64,2}     #azimuth angle [-π,π]
     sort_ind::Vector{Int}   #indices to sort according to ρ², then ϕ
     spiral_ind::Vector{Int} #indices to sort according to spiral: ρ² per pixel width, then ϕ
-    ρ²sort::Vector{Uint32}  #ρ² sorted by sort_ind
+    ρ²sort::Vector{UInt32}  #ρ² sorted by sort_ind
     ϕsort::Vector{Float64}  #ϕ sorted by sort_ind
-    ρ²unique::Vector{Uint32}#unique elements of ρ²
-    ρ²unique_ind::Vector{Uint32}   #(start) indices of each unique ρ² for use in ρ²sort
+    ρ²unique::Vector{UInt32}#unique elements of ρ²
+    ρ²unique_ind::Vector{UInt32}   #(start) indices of each unique ρ² for use in ρ²sort
 end
 
 # auxiliary function to count the number of unique ρ² and their index
 function count_unique(ρ²sort)
     issorted(ρ²sort) || error("ρ²sort not sorted")
     ρ²unique = unique(ρ²sort)    
-    ρ²uniquecounts = zeros(Uint32, length(ρ²unique)-1)
+    ρ²uniquecounts = zeros(UInt32, length(ρ²unique)-1)
     ρ²uniquecounts[1] = 1
     prevρ² = ρ²sort[1]
     cnt = 1
@@ -53,7 +53,8 @@ function spiralindex(ind, ρmax, ρ²unique, ρ²unique_ind, ϕsort)
     spiralind = similar(ind)
     ρ²spiralind = Int[] #temp array for ring of single pixel ρ² indices
     ind_prev = 1    
-    for singleρ² in [1:ρmax].^2        
+    for ρ in 1:ρmax
+        singleρ² = ρ^2
         firstρ²ind = searchsortedfirst(ρ²unique, singleρ²)       
         ρ²startind = ρ²unique_ind[firstρ²ind]
         ρ²spiralind = sortperm(ArrayViews.view(ϕsort, ind_prev:ρ²startind-1))
@@ -103,7 +104,7 @@ function calibrate(size1::Int, size2::Int, ci::Int, cj::Int, fθρ::Function, f�
 
     check_calibration_inputs(size1, size2, ci, cj, fθρ, fρθ)
     
-    ρ² = zeros(Uint32, size1, size2)
+    ρ² = zeros(UInt32, size1, size2)
     ϕ = zeros(Float64, size1, size2)
     for j = 1:size2
         @fastmath @inbounds @simd for i = 1:size1

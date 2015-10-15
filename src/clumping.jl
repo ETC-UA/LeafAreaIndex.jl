@@ -7,7 +7,7 @@ end
 
 function langxiang(polim::PolarImage, sl::NoSlope, thresh, θ1::Real, θ2::Real, 
                    nϕ::Integer)
-    @checkθ1θ2
+    checkθ1θ2(θ1,θ2)
     segm = segments(polim, θ1, θ2, nϕ)
     
     segm_gapfr = Float64[gapfraction(segm[i], thresh) for i in 1:length(segm)]
@@ -16,7 +16,7 @@ end
 
 function langxiang(polim::PolarImage, sl::Slope, thresh, θ1::Real, θ2::Real, 
                    nϕ::Integer)
-    @checkθ1θ2
+    checkθ1θ2(θ1,θ2)
     
     ρ²indstart = searchsortedfirst(polim.cl.ρ²unique, polim.cl.fθρ(θ1)^2) 
       ρ²indend =  searchsortedlast(polim.cl.ρ²unique, polim.cl.fθρ(θ2)^2) 

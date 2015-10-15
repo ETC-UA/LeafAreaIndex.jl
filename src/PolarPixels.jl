@@ -5,7 +5,7 @@ pixels(polim::PolarImage) = pixels(polim, 0., π/2)
 
 # for just polar distance, returning a view is sufficient and much faster
 function pixels(polim::PolarImage, θ1::Real, θ2::Real) 
-    @checkθ1θ2
+    checkθ1θ2(θ1,θ2)
     ind_first = searchsortedfirst(polim.cl.ρ²sort, polim.cl.fθρ(θ1)^2)
     ind_last = searchsortedlast(polim.cl.ρ²sort, polim.cl.fθρ(θ2)^2) 
     ArrayViews.view(polim.imgsort, ind_first:ind_last)
@@ -20,7 +20,7 @@ end
 
 # # PolarPixels constructor
 # function PolarPixels(polim::PolarImage, θ1::Real, θ2::Real)
-#     @checkθ1θ2
+#     checkθ1θ2(θ1,θ2)
 #     ind_first = searchsortedfirst(polim.cl.ρ²sort, polim.cl.fθρ(θ1)^2)
 #     ind_last = searchsortedlast(polim.cl.ρ²sort, polim.cl.fθρ(θ2)^2) 
 #     PolarPixels{eltype(polim.img), typeof(polim.img)}(ind_first, ind_last, polim)

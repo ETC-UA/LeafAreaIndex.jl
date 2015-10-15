@@ -14,11 +14,10 @@ export calibrate, PolarImage, Slope,
 VERSION < v"0.4-" && using Docile
 
 # reoccuring argument checks
-macro checkθ1θ2()
-    quote θ1 < 0 && throw(DomainError())
-        θ2 > π/2 && throw(DomainError())
-        θ2 < θ1 && error("θ2 < θ1")
-    end
+function checkθ1θ2(θ1, θ2)
+    θ1 < 0   && throw(DomainError())
+    θ2 > π/2 && throw(DomainError())
+    θ2 < θ1  && error("θ2 < θ1")
 end
 
 "Specialed type for immutable streaming sum, based on PR #18 from StreamStats.jl"
@@ -45,7 +44,6 @@ function fasthist(img::AbstractVector, edg::Range)
     end
     histcount
 end
-
 
 include("CameraLens.jl")
 include("Slope.jl")

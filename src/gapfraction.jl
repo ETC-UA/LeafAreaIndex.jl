@@ -61,7 +61,7 @@ end
 
 function contactfreqs(polim::PolarImage, sl::NoSlope, θ1::Real, θ2::Real, 
                       N::Integer, thresh)
-    @checkθ1θ2
+    checkθ1θ2(θ1,θ2)
     θedges, θmid = weightedrings(polim, θ1, θ2, N)    
     K = zeros(N)
     for i = 1:N        
@@ -97,7 +97,7 @@ end
 function contactfreqs(polim::PolarImage, sl::Slope, θ1::Real, θ2::Real, 
       N::Integer, thresh; Nϕ=AZIMUTH_GROUPS, max_iter=MAX_ITER_τ, tol=SLOPE_TOL)
 
-    @checkθ1θ2
+    checkθ1θ2(θ1,θ2)
     θedges, θmid = weightedrings(polim, θ1, θ2, N)    
 
     K = zeros(N)

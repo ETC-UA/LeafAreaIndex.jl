@@ -1,7 +1,7 @@
-# TODO check if `thresh` as keyword argument is detrimental for performance
+# Constants
 
-"Default ring width for zenith57."
-const RING_WIDTH = 5/180*π
+"Ring width for zenith57."
+const RING_WIDTH = 5 / 180 * π
 """Number of grouped consecutive ρ² rings for Miller's approach
  (each typically with 4 or 8 pixels)."""
 const MILLER_GROUPS = 10
@@ -11,33 +11,50 @@ const LANG_START = 25/180*pi
 const LANG_END = 65/180*pi
 "Maximum viewing angle used."
 const θMAX = π/2
-"Lookup Table parameters as in Weiss et al 2004."
+"Number of points parameters for Lookup Table method as in Weiss et al 2004."
 const LUT_POINTS = 10_000 # number of points in LUT
+"Sample number for LAI result median for Lookup Table method as in Weiss et al 2004."
 const LUT_NMEDIAN = 25 # number of points to sample (median) LAI from Weiss 2004
 """Default LAI starting point for `ellips_opt` method. 
 Better to use a simple method such as `zenith57` or `lang` for a realistic
 LAI starting point for keyword argument `LAI_init`."""
 const DEFAULT_LAI_INIT = 3.0
 
-"""Generic inversion function. Default method is ellips_opt. Use keyword 
-argument `method` with symbolic values `:ellips_opt`(default), `:ellips_LUT`,
-`zenith57`, `lang` or `miller`."""
-function inverse(polim::PolarImage; method = :ellips_opt, kwargs...)
-    method == :ellips_opt ? ellips_opt(polim; kwargs...) :
-    method == :ellips_LUT ? ellips_LUT(polim; kwargs...) :
-    method == :zenith57   ?   zenith57(polim; kwargs...) :
-    method == :lang       ?       lang(polim; kwargs...) :
-    method == :miller     ?     miller(polim; kwargs...) :
-    error("Method $method not recognized.")
-end
-function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float64}; 
-                 method = :ellips_opt, kwargs...)
+abstract InversionMethod
+type Zenith57    <: InversionMethod end
+type Lang        <: InversionMethod end
+type Miller      <: InversionMethod end
+type MillerGroup <: InversionMethod end
+type MillerNaive <: InversionMethod end
+type MillerRings <: InversionMethod end
+type EllipsOpt   <: InversionMethod end
+type EllipsLUT   <: InversionMethod end
 
-    method == :ellips_opt ?  ellips_opt(θmid, K; kwargs...) :
-    method == :ellips_LUT ?  ellips_LUT(θmid, K; kwargs...) :
-    method == :lang       ?        lang(θmid, K) :
-    method == :miller     ? millerrings(θedges, θmid, K) :
-    error("Method $method not recognized.")
+
+## Generic function
+## ----------------
+
+"Generic inversion function. Default method is EllipsOpt."
+function inverse(polim::PolarImage, thresh = threshold(polim); kwargs...)
+    inverse(polim, thresh, EllipsOpt(); kwargs...)
+end
+
+function inverse(polim::PolarImage, im::InversionMethod; kwargs...)
+    inverse(polim, threshold(polim), im; kwargs...)
+end
+
+"Default inversion function for set of gapfractions using EllipsOpt."
+function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float64};
+                  kwargs...)
+    inverse(θedges, θmid, K, EllipsOpt(); kwargs...)
+end
+
+"Default number of rings for integration of a Polar Image."
+function Nrings_def(polim::PolarImage)
+    if isa(polim.slope, NoSlope)
+        return iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS)
+    end
+    return iceil(polim.cl.fθρ(pi/2) / AZIMUTH_GROUPS / MILLER_GROUPS)    
 end
 
 
@@ -45,12 +62,15 @@ end
 ## --------------
 
 """ At constant zenith view angle of 1 rad the gapfraction is almost independent
-# of the leaf angle distribution."""
-function zenith57(polim::PolarImage; 
-                  thresh = threshold(polim), ringwidth = RING_WIDTH, kwargs...)
+of the leaf angle distribution."""
+function inverse(polim::PolarImage, thresh, ::Zenith57; ringwidth = RING_WIDTH, args...)
     θedges, θmid, K = contactfreqs(polim, 1 - ringwidth, 1 + ringwidth, 1, thresh)
     G = 0.5
     K[1] / G
+end
+
+function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float64}, ::Zenith57)
+    2 * K[1] # i.e. K[1] / 0.5
 end
 
 
@@ -58,36 +78,36 @@ end
 ## -------------
 
 "Approximate the contact frequency with a first order regression."
-function lang(polim::PolarImage; 
-              thresh::Real = threshold(polim), 
-              θ1::Real = LANG_START, 
-              θ2::Real = LANG_END,
-              Nrings = iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS * (θ2-θ1)/(pi/2)),
-              kwargs...)
-    @checkθ1θ2
+function inverse(polim::PolarImage, thresh, ::Lang; θ1::Real = LANG_START, θ2::Real = LANG_END,
+              Nrings = Nrings_def(polim)*(θ2-θ1)/(pi/2), kwargs...)
+    checkθ1θ2(θ1, θ2)
     θedges, θmid, K = contactfreqs(polim, θ1, θ2, Nrings, thresh)
-    lang(θmid, K)
+    inverse(θedges, θmid, K, Lang())
 end
-lang(θmid::Vector{Float64}, K::Vector{Float64}) = 2 * sum(linreg(θmid, K))
+
+function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float64}, ::Lang)
+    2 * sum(linreg(θmid, K))
+end
 
 
 ## Miller's formula
 ## ----------------
 
 """
-Miller's formula assuming constant leaf angle. We implement 3 methods:
-* the naive one taking the integration for each unique ρ
-* grouping consecutive ρ distances
-* dividing the zenith range in N rings with equal number of pixels (default)
+Miller's formula assumes a constant leaf angle. We implement 3 methods:
+* the naive one taking the integration for each unique ρ (`millersimple`)
+* grouping consecutive ρ distances (`millergroup`)
+* dividing the zenith range in N rings each with an equal number of pixels (default).
 """
-miller(polim::PolarImage; kwargs...) = millerrings(polim; kwargs...)
+function inverse(polim::PolarImage, thresh, ::Miller; kwargs...) 
+    inverse(polim, thresh, MillerRings(); kwargs...)
+end
 
 """Because the naive method takes too little pixels per iteration, it distorts
-# the gap fraction. It is only given for reference."""
-function millersimple(polim::PolarImage; 
-                      thresh::Real = threshold(polim), θmax=θMAX, kwargs...)
-    prevθ = 0.
-    s = 0.
+the gap fraction. It is only given for reference."""
+function inverse(polim::PolarImage, thresh, ::MillerNaive; θmax = θMAX, kwargs...)
+    prevθ = 0.0
+    s = 0.0
     #define inverse function for ρ²
     fρ²θ(ρ²) = polim.cl.fρθ(sqrt(ρ²))
 
@@ -102,15 +122,13 @@ function millersimple(polim::PolarImage;
         s -= logP  * cos(θ) * adj * sin(θ) * dθ
         prevθ = θ
     end
-    return(2s)
+    2s
 end
 
 """Group a number of consecutive ρ²-rings together and then integrate.
  dθ is incorrect for first and last, but the cos or sin will reduce these terms."""
-function millergroup(polim::PolarImage;
-                     group::Integer = MILLER_GROUPS, 
-                     thresh::Real = threshold(polim),
-                     θmax::Real = θMAX, kwargs...)
+function inverse(polim::PolarImage, thresh, ::MillerGroup;
+                 group::Integer = MILLER_GROUPS, θmax::Real = θMAX, kwargs...)
     s = 0.
     prevθ = 0.
     count = 0
@@ -143,27 +161,16 @@ function millergroup(polim::PolarImage;
     return(2s)
 end
 
-"Create a N rings and integrate. This is the most robust way."
-function millerrings(polim::PolarImage;
-                     N::Integer = Nrings_def(polim),
-                     thresh = threshold(polim),
-                     θmax=θMAX, kwargs...)
+"Create a N rings and integrate. This is the most robust way for Miller's method."
+function inverse(polim::PolarImage, thresh, ::MillerRings;
+                     N::Integer = Nrings_def(polim), θmax = θMAX, kwargs...)
     θedges, θmid, K = contactfreqs(polim, 0, θmax, N, thresh)
-    millerrings(θedges, θmid, K)
+    inverse(θedges, θmid, K, MillerRings())
 end
 
-function millerrings{T<:Real}(θedges::AbstractArray{T}, θmid::Vector{Float64}, 
-                     K::Vector{Float64})
+function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float64}, ::MillerRings)
     dθ = diff(θedges)
     2 * sum(K .* sin(θmid) .* dθ)
-end
-
-"Default number of rings for integration of a Polar Image."
-function Nrings_def(polim::PolarImage)
-    if isa(polim.slope, NoSlope)
-        return iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS)
-    end
-    return iceil(polim.cl.fθρ(pi/2) / AZIMUTH_GROUPS / MILLER_GROUPS)    
 end
 
 
@@ -183,17 +190,17 @@ function model_ellips(θmid::Vector{Float64}, params::Vector{Float64})
 end
 
 """
-# Assuming an ellipsoidal leaf angle distribution (with one parameter), we use the inverse model to
-# estimate the average leaf inclination angle (ALIA) and Leaf Area Index (LAI)
-# from the observed gap fraction per view zenith angle.
+Assuming an ellipsoidal leaf angle distribution (with one parameter), we use the inverse model 
+to estimate the average leaf inclination angle (ALIA) and Leaf Area Index (LAI)
+from the observed gap fraction per view zenith angle.
 
 This method uses a curve fitting technique to find the optimal values for the leaf angle
 distribution parameter ALIA and the LAI.
 """
-function ellips_opt(θmid::Vector{Float64}, K::Vector{Float64};
-                    LAI_init::Float64 = DEFAULT_LAI_INIT, kwargs...)
+function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float64}, ::EllipsOpt;
+                 LAI_init::Float64 = DEFAULT_LAI_INIT, kwargs...)
 
-    LAI_init == DEFAULT_LAI_INIT && warn("Used default for `LAI_init`, it's better to use an estimate from `zenith57`.")
+    LAI_init == DEFAULT_LAI_INIT && warn("Default value detected for `LAI_init`, it's better to use an estimate from `zenith57`.")
 
     # Find an initial value for ALIA
     fitfunalia(alia) = sum((model_ellips(θmid, [alia, LAI_init]) .- K).^2)
@@ -220,25 +227,23 @@ function ellips_opt(θmid::Vector{Float64}, K::Vector{Float64};
             throw(y)
         end
     end
-    error("ellips_opt did not terminate normally")
+    error("inverse EllipsOpt did not terminate normally")
 end
 
-function ellips_opt(polim::PolarImage; 
-                    thresh::Real = threshold(polim),
-                    Nrings = ceil(Int, polim.cl.fθρ(pi/2) / MILLER_GROUPS),
-                    θmax=θMAX, kwargs...)
+function inverse(polim::PolarImage, thresh, ::EllipsOpt;                     
+                    Nrings = Nrings_def(polim), θmax = θMAX, kwargs...)
     
     θedges, θmid, K = contactfreqs(polim, 0.0, θmax, Nrings, thresh)
     # Find inital value for LAI for optimization
     LAI_init = zenith57(polim, thresh)
-    ellips_opt(θmid, K; LAI_init=LAI_init)
+    inverse(θedges, θmid, K, EllipsOpt(); LAI_init=LAI_init)
 end
 
 
 ## Ellipsoidal LUT
 ## ---------------
 
-"Holds each element of the ellipsoidal Lookup Table method `ellips_LUT`."
+"Holds each element of the ellipsoidal Lookup Table method."
 immutable LUTel
     alia::Float64
     LAI::Float64
@@ -264,14 +269,13 @@ end
 
 """
 Assuming an ellipsoidal leaf angle distribution (with one parameter), we use the 
-inverse model to
-estimate the average leaf inclination angle (ALIA) and Leaf Area Index (LAI)
+inverse model to estimate the average leaf inclination angle (ALIA) and Leaf Area Index (LAI)
 from the observed gap fraction per view zenith angle.
 
 This method uses a Lookup Table (LUT) for the leaf angle distribution parameter 
 ALIA and the LAI, following [Weiss2004](http://www.researchgate.net/profile/Inge_Jonckheere/publication/222931516_Review_of_methods_for_in_situ_leaf_area_index_(LAI)_determination_Part_II._Estimation_of_LAI_errors_and_sampling/links/09e4150cefe5a4fea5000000.pdf).
 """
-function ellips_LUT(θmid::Vector{Float64}, K::Vector{Float64};
+function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float64}, ::EllipsLUT;
                     Nlut::Int = LUT_POINTS, Nmed::Integer=LUT_NMEDIAN, kwargs...)
 
     LUT = populateLUT(θmid; Nlut = Nlut)
@@ -289,14 +293,10 @@ function ellips_LUT(θmid::Vector{Float64}, K::Vector{Float64};
     LUT_LAI = median([el.LAI for el in LUT[LUTsortind[1:Nmed]]])
 end
 
-function ellips_LUT(polim::PolarImage;
-                    thresh = threshold(polim),
-                    Nrings = ceil(Int, polim.cl.fθρ(pi/2) / MILLER_GROUPS),
-                    θmax=θMAX,
-                    Nlut::Int=LUT_POINTS, 
-                    Nmed::Integer=LUT_NMEDIAN, kwargs...)
+function inverse(polim::PolarImage, thresh, ::EllipsLUT;
+                    Nrings = Nrings_def(polim), θmax = θMAX, Nlut::Int = LUT_POINTS, 
+                    Nmed::Integer = LUT_NMEDIAN, kwargs...)
 
     θedges, θmid, K = contactfreqs(polim, 0.0, θmax, Nrings, thresh)
-
-    ellips_LUT(θmid, K; Nlut = Nlut, Nmed = Nmed)
+    inverse(θedges, θmid, K, EllipsLUT(); Nlut = Nlut, Nmed = Nmed)
 end
