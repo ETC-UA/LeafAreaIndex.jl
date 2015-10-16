@@ -110,7 +110,7 @@ end
 
 # Cut out box around fθρ(π/2) to reduce for polarimage argument
 function edge_threshold(polim::PolarImage)
-    Rmax = iceil(polim.cl.fθρ(π/2))
+    Rmax = ceil(Int, polim.cl.fθρ(π/2))
     ci = polim.cl.ci
     cj = polim.cl.cj
     rowmin = max(1, ci - Rmax)
