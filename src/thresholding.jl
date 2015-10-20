@@ -34,7 +34,7 @@ function RidlerCalvard(gray::AbstractArray)
     thresh = mean(gray)
     count = 1
 
-    while count < RIDLER_CALVARD_MAX_ITER        
+    while count < RIDLER_CALVARD_MAX_ITER
         high, low  = highlowmean(gray, thresh)
         thresh_old = thresh
         thresh = (high + low) / 2
@@ -64,39 +64,39 @@ function pushshift!{T}(f::circqueue{T}, input::T)
         f.index = 1
     else
         f.index += 1
-    end    
+    end
     output
 end
 
 # optimization function for edge detection
-function edgefoptim(im, th)        
+function edgefoptim(im, th)
     t = convert(eltype(im), th)
     s = StreamMean()
     s = update(s, 0) # in case no edges
 
-    # We cache the first row and then 
+    # We cache the first row and then
     # work with circular dequeues for speed, using pushshift!
     imq = circqueue(im[:,1])
     thq = circqueue(im[:,1] .< t)
-        
+
     for j = 2:size(im,2)
-        # p stands for pixel, b for boolean; 
+        # p stands for pixel, b for boolean;
         #`prev` is one up, `up` is upper left, `left` is one left.
         prevp = im[1,j]
         prevb = prevp < t
-        upp = pushshift!(imq, prevp)        
+        upp = pushshift!(imq, prevp)
         upb = pushshift!(thq, prevb)
         for i = 2:size(im,1)
             p = im[i,j]
             b = p < t
             leftp = pushshift!(imq, p)
             leftb = pushshift!(thq, b)
-            
+
             if b != upb; s = update(s, abs(p - upp)); end
             if upb != prevb; s = update(s, abs(upp - prevp)); end
             if upb != leftb; s = update(s, abs(upp - leftp)); end
             if leftb != prevb; s = update(s, abs(leftp - prevp)); end
-            
+
             prevp, prevb = p, b
             upp, upb = leftp, leftb
         end
@@ -128,8 +128,8 @@ end
 ##
 
 # Check if histogram is bimodal by detecting change in direction.
-# TODO rewrite with diff 
-function isbimodal(hc) #hc=histcounts    
+# TODO rewrite with diff
+function isbimodal(hc) #hc=histcounts
     prevup = hc[2] > hc[1]
     prevc = hc[2]
     mode = 0
@@ -144,7 +144,7 @@ function isbimodal(hc) #hc=histcounts
         if mode > 2
             return false
         end
-                
+
         if !down
             prevup = ifelse(c == prevc, prevup, !down)
         else
@@ -163,15 +163,15 @@ function bimodalmin(hc)
     for i = 3:length(hc)
         c = hc[i]
         down = c < prevc
-        
+
         if prevup && down
             mode += 1
         end
-        
+
         if (mode == 1) && (c > prevc)
             return i - 1
         end
-                
+
         if !down
             prevup = ifelse(c == prevc, prevup, !down)
         else
@@ -193,12 +193,12 @@ function smooth_hist!{T<:AbstractFloat}(hc::AbstractArray{T})
     @inbounds for i = 2:(length(hc) - 1)
         nxt = hc[i+1]
         hc[i] = (prev + c + nxt) / 3
-        prev = c 
+        prev = c
         c = nxt
     end
 end
 # precision does not seem to increase by increasing binsize
-function minimum_threshold(img; bins=256, maxiter=10_000)       
+function minimum_threshold(img; bins=256, maxiter=10_000)
     hist_range = -1 / (bins-1) : 1 / (bins-1) : 1
     counts = fasthist(reshape(img, length(img)), hist_range)
     counts = float(counts) # required for convergence!
@@ -207,7 +207,7 @@ function minimum_threshold(img; bins=256, maxiter=10_000)
         cnt += 1
         smooth_hist!(counts)
         isbimodal(counts) && break
-    end     
+    end
     cnt == maxiter && warn("maximum iteration reached at $cnt in minimum_threshold")
     th = bimodalmin(counts)/bins
 end

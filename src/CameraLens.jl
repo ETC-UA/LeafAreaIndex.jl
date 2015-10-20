@@ -2,7 +2,7 @@
 
 # Type including distance to center ρ and polar angle ϕ for each pixel.
 # Useful for quickly accessing polar rings and segments.
-# This is Camera + Lens dependent, but it's the same for each of its pictures, 
+# This is Camera + Lens dependent, but it's the same for each of its pictures,
 # so ρ² and ϕ only need to be (pre)calculated per camera+lens once.
 # (Note UInt32 sufficient to store ρ²).
 # We assume the lens has at least 180ᵒ field of view.
@@ -26,7 +26,7 @@ end
 # auxiliary function to count the number of unique ρ² and their index
 function count_unique(ρ²sort)
     issorted(ρ²sort) || error("ρ²sort not sorted")
-    ρ²unique = unique(ρ²sort)    
+    ρ²unique = unique(ρ²sort)
     ρ²uniquecounts = zeros(UInt32, length(ρ²unique)-1)
     ρ²uniquecounts[1] = 1
     prevρ² = ρ²sort[1]
@@ -65,7 +65,7 @@ function spiralindex(ind, ρmax, ρ²unique, ρ²unique_ind, ϕsort)
     # last circle of spiral
     ρ²spiralind = sortperm(ϕsort[ind_prev:end])
     spiralind[ind_prev:end] = ind_prev - 1 + ρ²spiralind
-    # finally the spiral_ind is to be used on original image, not on ϕsort (or ρsort)    
+    # finally the spiral_ind is to be used on original image, not on ϕsort (or ρsort)
     spiral_ind = ind[spiralind]
 end
 
@@ -76,14 +76,14 @@ function check_calibration_inputs(size1, size2, ci::Int, cj::Int, fθρ::Functio
     size1 < 0 && error(BoundsError())
     size2 < 0 && error(BoundsError())
     ci < 0 && error(BoundsError())
-    cj < 0 && error(BoundsError())    
-    
+    cj < 0 && error(BoundsError())
+
     abs(ci/size1 - 0.5) > 0.1 && warn("ci ($ci) more than 10% away from center ($(size1/2).")
     abs(cj/size2 - 0.5) > 0.1 && warn("cj ($cj) more than 10% away from center ($(size1/2)).")
 
     abs(ci/size1 - 0.5) > 0.2 && error("ci ($ci) more than 20% away from center ($(size1/2).")
-    abs(cj/size2 - 0.5) > 0.2 && error("cj ($cj) more than 20% away from center ($(size1/2)).")    
-    
+    abs(cj/size2 - 0.5) > 0.2 && error("cj ($cj) more than 20% away from center ($(size1/2)).")
+
     fθρ(0.) < 0 && error("Incorrectly defined fθρ; fθρ(0) < 0.")
     fθρ(pi/2) < 2 && error("Incorrectly defined fθρ; fθρ(π/2) < 2")
     all(diff(map(fθρ, linspace(0, pi/2, 100))) .> 0) || error("Incorrectly defined fθρ; fθρ not monotonic")
@@ -103,7 +103,7 @@ end
 function calibrate(size1::Int, size2::Int, ci::Int, cj::Int, fθρ::Function, fρθ::Function)
 
     check_calibration_inputs(size1, size2, ci, cj, fθρ, fρθ)
-    
+
     ρ² = zeros(UInt32, size1, size2)
     ϕ = zeros(Float64, size1, size2)
     for j = 1:size2
@@ -125,8 +125,8 @@ function calibrate(size1::Int, size2::Int, ci::Int, cj::Int, fθρ::Function, f�
     ind = ind[1:ρ²indmax]
     ϕsort = ϕ[ind]
 
-    # For fast indexing in ϕsort and ρ²sort by increasing ρ² we calculate the 
-    # indices where each unique ρ² starts. This is uesed by PolarRings to 
+    # For fast indexing in ϕsort and ρ²sort by increasing ρ² we calculate the
+    # indices where each unique ρ² starts. This is uesed by PolarRings to
     # iterate over rings with increasing ρ² values.
     ρ²unique, ρ²unique_ind =  count_unique(ρ²sort)
 
@@ -136,7 +136,7 @@ function calibrate(size1::Int, size2::Int, ci::Int, cj::Int, fθρ::Function, f�
     CameraLens(size1,size2,ci,cj,fθρ,fρθ,ind,spiral_ind,ρ²sort,ϕsort,ρ²unique,ρ²unique_ind)
 end
 
-function Base.show(io::IO, cl::CameraLens) 
+function Base.show(io::IO, cl::CameraLens)
     print(io::IO, "CameraLens object with:\n")
     print(io::IO, "\t size: (", cl.size1,", ",cl.size2,")\n")
     print(io::IO, "\t center i,j: ",cl.ci, ", ",cl.cj,"\n")
@@ -147,7 +147,7 @@ Base.writemime(io::IO, ::MIME"text/plain", cl::CameraLens) = show(io, cl)
 function gencalibrate(M::AbstractMatrix)
     size1, size2 = size(M)
     ci,cj = iceil(size1/2), iceil(size2/2) #center point
-    ρmax = min(ci, cj, size2-ci, size2-cj) 
+    ρmax = min(ci, cj, size2-ci, size2-cj)
     fθρ(θ) = θ / (π/2) * ρmax
     fρθ(ρ) = ρ / ρmax * π/2
     CameraLens(size1, size2, ci, cj, fθρ, fρθ)
