@@ -10,13 +10,15 @@ RidlerCalvard(polim::PolarImage) = RidlerCalvard(pixels(polim))
 ##
 
 # adopted with permission from Jason Merrill for MIT license
-function RidlerCalvard(gray)    
+function RidlerCalvard(gray::AbstractArray)    
     
     # Single pass over input for both high and low mean is
     # almost 5 times faster because no temporary array allocation.
     function highlowmean(gray, thresh)
-        lowmean = highmean = zero(thresh)
-        lowcount = highcount = 0
+        lowmean  = zero(thresh)
+        highmean = zero(thresh)
+        lowcount = 0
+        highcount= 0
         for pixel in gray            
             if pixel < thresh
                 lowmean += pixel

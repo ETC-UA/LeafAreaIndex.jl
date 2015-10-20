@@ -52,9 +52,9 @@ end
 "Default number of rings for integration of a Polar Image."
 function Nrings_def(polim::PolarImage)
     if isa(polim.slope, NoSlope)
-        return iceil(polim.cl.fθρ(pi/2) / MILLER_GROUPS)
+        return ceil(Int, polim.cl.fθρ(pi/2) / MILLER_GROUPS)
     end
-    return iceil(polim.cl.fθρ(pi/2) / AZIMUTH_GROUPS / MILLER_GROUPS)    
+    return ceil(Int, polim.cl.fθρ(pi/2) / AZIMUTH_GROUPS / MILLER_GROUPS)
 end
 
 
@@ -79,7 +79,7 @@ end
 
 "Approximate the contact frequency with a first order regression."
 function inverse(polim::PolarImage, thresh, ::Lang; θ1::Real = LANG_START, θ2::Real = LANG_END,
-              Nrings = Nrings_def(polim)*(θ2-θ1)/(pi/2), kwargs...)
+              Nrings = round(Int, Nrings_def(polim)*(θ2-θ1)/(pi/2)), kwargs...)
     checkθ1θ2(θ1, θ2)
     θedges, θmid, K = contactfreqs(polim, θ1, θ2, Nrings, thresh)
     inverse(θedges, θmid, K, Lang())
@@ -201,6 +201,10 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
                  LAI_init::Float64 = DEFAULT_LAI_INIT, kwargs...)
 
     LAI_init == DEFAULT_LAI_INIT && warn("Default value detected for `LAI_init`, it's better to use an estimate from `zenith57`.")
+    if !(0.2 < LAI_init < 9)
+        warn("LAI starting point ($LAI_init) for optimization outside limits [0.2, 9] and will be reset.")
+        LAI_init = DEFAULT_LAI_INIT # max(min(LAI_init, 9), 0.2)
+    end
 
     # Find an initial value for ALIA
     fitfunalia(alia) = sum((model_ellips(θmid, [alia, LAI_init]) .- K).^2)
@@ -235,7 +239,7 @@ function inverse(polim::PolarImage, thresh, ::EllipsOpt;
     
     θedges, θmid, K = contactfreqs(polim, 0.0, θmax, Nrings, thresh)
     # Find inital value for LAI for optimization
-    LAI_init = zenith57(polim, thresh)
+    LAI_init = inverse(polim, thresh, Zenith57())
     inverse(θedges, θmid, K, EllipsOpt(); LAI_init=LAI_init)
 end
 

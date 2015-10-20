@@ -30,3 +30,13 @@ testimg2 = 0.5 * ones(FixedPointNumbers.Ufixed16, 5, 5)
 testimg2[2:4, 2:4] = 0.7
 testimg2[3, 3] = 1
 @test minimum_threshold(testimg2) > 0.5
+
+# CircQueue
+let
+	a = [1, 2, 3]
+	c = CircQueue(a)	
+	@test pushshift!(c, 5) == 1
+	@test pushshift!(c, 6) == 2
+	@test pushshift!(c, 7) == 3
+	@test pushshift!(c, 8) == 5
+end

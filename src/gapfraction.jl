@@ -12,7 +12,7 @@ gapfraction(pixs, thresh) = mean(pixs .> thresh)
 #in general specialize on type of input array
 function gapfraction(pixs::AbstractArray, thresh)
     threshT = convert(eltype(pixs), thresh)
-    gapfrsum = zero(Int)        
+    gapfrsum = 0
     for pix in pixs
         gapfrsum += pix > threshT
     end

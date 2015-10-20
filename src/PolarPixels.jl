@@ -1,7 +1,7 @@
 ## PolarPixels ##
 
 #pixels(polim::PolarImage, θ::Real) = pixels(polim, zero(θ), θ)
-pixels(polim::PolarImage) = pixels(polim, 0., π/2)
+pixels(polim::PolarImage) = pixels(polim, 0.0, π/2)
 
 # for just polar distance, returning a view is sufficient and much faster
 function pixels(polim::PolarImage, θ1::Real, θ2::Real) 

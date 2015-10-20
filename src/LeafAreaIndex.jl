@@ -6,7 +6,7 @@ using Compat
 export calibrate, PolarImage, Slope,
     pixels, gapfraction, contactfreq,
     threshold, edge_threshold, minimum_threshold, RidlerCalvard,
-    zenith57, miller, lang, ellips_LUT, ellips_opt,
+    inverse, Zenith57, Miller, Lang, EllipsLUT, EllipsOpt,
     langxiang45, chencihlar,
     calibrate_center, calibrate_projfun
 
