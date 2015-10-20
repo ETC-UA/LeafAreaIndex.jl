@@ -29,6 +29,7 @@ StreamMean() = StreamMean(0.0, 0)
 update(sm::StreamMean, term) = StreamMean(sm.streamsum + term, sm.len + 1)
 Base.mean(sm::StreamMean) = sm.streamsum / sm.len
 Base.empty!(sm::StreamMean) = StreamMean()
+Base.length(sm::StreamMean) = sm.len
 
 # A fast histogram method derived from julialang PR #8952. Used in thresholding
 # and slope adjustment.

@@ -45,26 +45,22 @@ function RidlerCalvard(gray::AbstractArray)
 end
 
 
-##
-## Edge detection method
-##
+# Edge detection method
+# ---------------------
 
 # Specialized type for fast circular queue
 type circqueue{T}
     array::Vector{T}
     len::Int
-    index::Int
+    index::Int #to be replaced
 end
 circqueue(A::AbstractVector) = circqueue{eltype(A)}(A, length(A), 1)
 function pushshift!{T}(f::circqueue{T}, input::T)
     ind = f.index
+    len = f.len
     output = f.array[ind]
     f.array[ind] = input
-    if ind == f.len
-        f.index = 1
-    else
-        f.index += 1
-    end
+    f.index = ifelse(ind == f.len, 1, ind + 1) #ifelse faster than ternary
     output
 end
 
@@ -101,16 +97,26 @@ function edgefoptim(im, th)
             upp, upb = leftp, leftb
         end
     end
-    mean(s)/2
+    # The published algorithm uses:
+    #    out = mean(s)/2 
+    # but we normalize the contrast mean with the sqrt (because 2D) 
+    # of edges count, to avoid spurious results with high threshold
+    # values and very little edges.
+    out = mean(s) * sqrt(length(s))
 end
 
-function edge_threshold(gray)
+function edge_threshold(gray::AbstractArray)
     # maximization so use negative sign
     res = Optim.optimize(x -> -edgefoptim(gray, x), 0.01, 0.99)
     res.minimum
 end
 
 # Cut out box around fθρ(π/2) to reduce for polarimage argument
+"""Edge Detection method for automatic thresholding after Nobis & Hunziker, 2005.
+It optimizes the threshold to find the maximum value of the contrast mean at edges.
+Method is slightly adapted from original by normalizing the contrast mean with the
+sqrt (because 2D) of edges count, to avoid spurious results with high threshold
+values and very little edges."""
 function edge_threshold(polim::PolarImage)
     Rmax = ceil(Int, polim.cl.fθρ(π/2))
     ci = polim.cl.ci
@@ -123,9 +129,8 @@ function edge_threshold(polim::PolarImage)
 end
 
 
-##
-## Minimum method
-##
+# Minimum method
+# --------------
 
 # Check if histogram is bimodal by detecting change in direction.
 # TODO rewrite with diff
