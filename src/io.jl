@@ -1,7 +1,7 @@
 # We use [dcraw](http://www.cybercom.net/~dcoffin/dcraw/) to extract from RAW images
 # the blue channel pixels and convert to 16bit tiff without exposure manipulation.
 
-# On mac, compile dcraw.c with 
+# On mac, compile dcraw.c with
 # 	`llvm-gcc -o dcraw dcraw.c -lm -DNO_JPEG -DNO_LCMS -DNO_JASPER`
 # source [http://vkphotoblog.blogspot.be/2014/05/dcraw-921-for-os-x-mavericks-users.html]
 
@@ -18,37 +18,41 @@
 import Images
 
 const RAW_EXT = ASCIIString[".3fr", ".ari", ".arw", ".bay", ".crw", ".cr2",
-".cap", ".dcs", ".dcr", #".dng", 
+".cap", ".dcs", ".dcr", #".dng",
 ".drf", ".eip", ".erf", ".fff", ".iiq", ".k25", ".kdc", ".mdc", ".mef", ".mos", ".mrw",
-".nef", ".nrw", ".obm", ".orf", ".pef", ".ptx", ".pxn", ".r3d", ".raf", ".raw", ".rwl", 
+".nef", ".nrw", ".obm", ".orf", ".pef", ".ptx", ".pxn", ".r3d", ".raf", ".raw", ".rwl",
 ".rw2", ".rwz", ".sr2", ".srf", ".srw", ".tif", ".x3f"]
 
 const DCRAW_DIR = joinpath(Pkg.dir("LeafAreaIndex"),"src","dcraw")
-@windows_only const dcraw = joinpath(DCRAW_DIR, "dcraw-9.26-ms-64-bit.exe")
-@unix_only    const dcraw = joinpath(DCRAW_DIR, "dcraw")
+@windows_only const DCRAW_EXE = joinpath(DCRAW_DIR, "dcraw-9.26-ms-64-bit.exe")
+@unix_only begin
+    const DCRAW_EXE = joinpath(DCRAW_DIR, "dcraw")
+    isexecutable(DCRAW_EXE) || chmod(DCRAW_EXE, 0o755)
+end
 
 """Read in the raw blue channel from a raw image. The image is copied to
 a temporary directory and run through dcraw with options `-d -4 -T -j -t 0 -r 0 0 0 1`."""
-function rawblueread(filepath::AbstractString; 
-    overwrite=false, destdir=joinpath(tempdir(), "tiffs"), rmtiff=true)
-    
+function rawblueread(filepath::AbstractString;
+    overwrite=false, destdir=joinpath(tempdir(), "tiffs"), rmcopy=true, rmtiff=true)
+
     isfile(filepath) || error()
     ext = lowercase(splitext(filepath)[end])
     ext ∈ RAW_EXT || error("File extension $ext not in list RAW_EXT. Filepath given $filepath")
     isdir(destdir) || mkdir(destdir)
 
-    raw2tiff(f) = run(`$dcraw -d -4 -T -j -t 0 -r 0 0 0 1 $f`)
-    
+    raw2tiff(f) = run(`$DCRAW_EXE -d -4 -T -j -t 0 -r 0 0 0 1 $f`)
+
     copyfile = joinpath(destdir, splitdir(filepath)[end])
     tiff = splitext(copyfile)[1] * ".tiff"
-    
+
     if !overwrite && isfile(tiff)
         return Images.imread(tiff)
     end
-    
+
     cp(filepath, copyfile; remove_destination=true)
     raw2tiff(copyfile)
     img = Images.imread(tiff)
+    rmcopy && rm(copyfile)
     rmtiff && rm(tiff)
     img
 end
