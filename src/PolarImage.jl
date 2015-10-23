@@ -25,7 +25,8 @@ function PolarImage(img::AbstractMatrix, cl::CameraLens, slope::SlopeInfo)
     PolarImage{eltype(img), typeof(img)}(cl, slope, img, imgsort, imgspiral,τsort)
 end
 
-Memoize.@memoize function create_τsort(sl::NoSlope, cl::CameraLens)
+# removed Memoize.@memoize b/c memory will not be freed. 
+function create_τsort(sl::NoSlope, cl::CameraLens)
     # create θ in case of no slope
     τsort = similar(cl.ϕsort)
     ρ²sort = cl.ρ²sort 
@@ -35,9 +36,9 @@ Memoize.@memoize function create_τsort(sl::NoSlope, cl::CameraLens)
     end
     τsort
 end
-# TODO remove memoize? This memory will not be freed. CAREFUL!
-Memoize.@memoize function create_τsort(sl::Slope, cl::CameraLens)
-    τsort = copy(cl.ϕsort)
+# removed Memoize.@memoize b/c memory will not be freed.
+function create_τsort(sl::Slope, cl::CameraLens)
+    τsort = deepcopy(cl.ϕsort)
     ρ²sort = cl.ρ²sort    
     #fρ²θ(ρ²) = cl.fρθ(sqrt(ρ²)) 
     fρ²θ = approx_fρ²θ(cl)
@@ -55,7 +56,7 @@ function approx_fρ²θ(cl::CameraLens; N=APPROX_N)
     # fit θ(x) = a*sqrt(x) + bx + c*x^3/2 with x=ρ² for fast inverse projection function
 
     ρ² = linspace(0, cl.ρ²sort[end], N)
-    A = [ρ²ᵢ^p for ρ²ᵢ in ρ², p in [0.5,1.,1.5]]
+    A = [ρ²ᵢ^p for ρ²ᵢ in ρ², p in [0.5, 1, 1.5]]
     a,b,c = A \ map(cl.fρθ, sqrt(ρ²))
     
     f = FastAnonymous.@anon x -> (a*sqrt(x) + b*x + c*x^1.5)
