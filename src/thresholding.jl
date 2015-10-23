@@ -1,22 +1,27 @@
 const RIDLER_CALVARD_MAX_ITER = 100
 const RIDLER_CALVARD_TOL = 1e-6
 
+abstract ThresholdMethod
+type RidlerCalvard    <: ThresholdMethod end
+type EdgeDetection    <: ThresholdMethod end
+type MinimumThreshold <: ThresholdMethod end
 
-threshold(polim::PolarImage) = RidlerCalvard(polim)
-RidlerCalvard(polim::PolarImage) = RidlerCalvard(pixels(polim))
+threshold(polim::PolarImage) = threshold(polim, RidlerCalvard())
+threshold(polim::PolarImage, ::RidlerCalvard) = threshold(pixels(polim), RidlerCalvard())
 
-##
-## Ridler Calvard method
-##
+# Ridler Calvard method
+# ---------------------
 
 # adopted with permission from Jason Merrill for MIT license
-function RidlerCalvard(gray)    
+function threshold(gray::AbstractArray, ::RidlerCalvard)    
     
     # Single pass over input for both high and low mean is
     # almost 5 times faster because no temporary array allocation.
     function highlowmean(gray, thresh)
-        lowmean = highmean = zero(thresh)
-        lowcount = highcount = 0
+        lowmean  = zero(thresh)
+        highmean = zero(thresh)
+        lowcount = 0
+        highcount= 0
         for pixel in gray            
             if pixel < thresh
                 lowmean += pixel
@@ -26,16 +31,16 @@ function RidlerCalvard(gray)
                 highcount += 1
             end
         end
-        highmean/highcount, lowmean/lowcount
+        return (highmean / highcount, lowmean / lowcount)
     end
 
     thresh = mean(gray)
     count = 1
 
-    while count < RIDLER_CALVARD_MAX_ITER        
+    while count < RIDLER_CALVARD_MAX_ITER
         high, low  = highlowmean(gray, thresh)
         thresh_old = thresh
-        thresh = (high + low)/2
+        thresh = (high + low) / 2
         abs(thresh - thresh_old) < RIDLER_CALVARD_TOL && break
         count += 1
     end
@@ -43,91 +48,96 @@ function RidlerCalvard(gray)
 end
 
 
-##
-## Edge detection method
-##
+# Edge detection method
+# ---------------------
 
-# Specialized type for fast circular queue
+"Specialized type for a fast circular queue."
 type circqueue{T}
     array::Vector{T}
     len::Int
-    index::Int
+    index::Int #to be replaced
 end
 circqueue(A::AbstractVector) = circqueue{eltype(A)}(A, length(A), 1)
 function pushshift!{T}(f::circqueue{T}, input::T)
     ind = f.index
+    len = f.len
     output = f.array[ind]
     f.array[ind] = input
-    if ind == f.len
-        f.index = 1
-    else
-        f.index += 1
-    end    
+    f.index = ifelse(ind == f.len, 1, ind + 1) #ifelse faster than ternary
     output
 end
 
-# optimization function for edge detection
-function edgefoptim(im, th)        
+"Fitness function to be optimized for Edge Detection method."
+function edgefoptim(im, th)
     t = convert(eltype(im), th)
     s = StreamMean()
     s = update(s, 0) # in case no edges
 
-    # We cache the first row and then 
+    # We cache the first row and then
     # work with circular dequeues for speed, using pushshift!
     imq = circqueue(im[:,1])
     thq = circqueue(im[:,1] .< t)
-        
+
     for j = 2:size(im,2)
-        # p stands for pixel, b for boolean; 
+        # p stands for pixel, b for boolean;
         #`prev` is one up, `up` is upper left, `left` is one left.
         prevp = im[1,j]
         prevb = prevp < t
-        upp = pushshift!(imq, prevp)        
+        upp = pushshift!(imq, prevp)
         upb = pushshift!(thq, prevb)
         for i = 2:size(im,1)
             p = im[i,j]
             b = p < t
             leftp = pushshift!(imq, p)
             leftb = pushshift!(thq, b)
-            
+
             if b != upb; s = update(s, abs(p - upp)); end
             if upb != prevb; s = update(s, abs(upp - prevp)); end
             if upb != leftb; s = update(s, abs(upp - leftp)); end
             if leftb != prevb; s = update(s, abs(leftp - prevp)); end
-            
+
             prevp, prevb = p, b
             upp, upb = leftp, leftb
         end
     end
-    mean(s)/2
+    # The published algorithm uses:
+    #    out = mean(s)/2 
+    # but we multiply the contrast mean with the sqrt (because 2D) 
+    # of edges count, to avoid spurious results with high threshold
+    # values and very little edges.
+    out = mean(s) * sqrt(length(s))
 end
 
-function edge_threshold(gray)
+function threshold(gray::AbstractArray, ::EdgeDetection)
     # maximization so use negative sign
-    res = Optim.optimize(x->-edgefoptim(gray, x), 0.01, 0.99)
+    res = Optim.optimize(x -> -edgefoptim(gray, x), 0.01, 0.99)
     res.minimum
 end
 
 # Cut out box around fθρ(π/2) to reduce for polarimage argument
-function edge_threshold(polim::PolarImage)
-    Rmax = iceil(polim.cl.fθρ(π/2))
+"""Edge Detection method for automatic thresholding after Nobis & Hunziker, 2005.
+It optimizes the threshold to find the maximum value of the contrast mean at edges.
+Method is slightly adapted from original by normalizing the contrast mean with the
+sqrt (because 2D) of edges count, to avoid spurious results with high threshold
+values and very little edges."""
+function threshold(polim::PolarImage, ::EdgeDetection)
+    Rmax = ceil(Int, polim.cl.fθρ(π/2))
     ci = polim.cl.ci
     cj = polim.cl.cj
     rowmin = max(1, ci - Rmax)
     rowmax = min(polim.cl.size1, ci + Rmax)
     colmin = max(1, cj - Rmax)
     colmax = min(polim.cl.size2, cj + Rmax)
-    edge_threshold(polim.img[rowmin:rowmax, colmin:colmax])
+    threshold(polim.img[rowmin:rowmax, colmin:colmax], EdgeDetection())
 end
 
 
-##
-## Minimum method
-##
+# Minimum method
+# --------------
 
 # Check if histogram is bimodal by detecting change in direction.
-# TODO rewrite with diff 
-function isbimodal(hc) #hc=histcounts    
+# TODO rewrite with diff
+function isbimodal(hc) #hc=histcounts
     prevup = hc[2] > hc[1]
     prevc = hc[2]
     mode = 0
@@ -142,7 +152,7 @@ function isbimodal(hc) #hc=histcounts
         if mode > 2
             return false
         end
-                
+
         if !down
             prevup = ifelse(c == prevc, prevup, !down)
         else
@@ -161,15 +171,15 @@ function bimodalmin(hc)
     for i = 3:length(hc)
         c = hc[i]
         down = c < prevc
-        
+
         if prevup && down
             mode += 1
         end
-        
+
         if (mode == 1) && (c > prevc)
             return i - 1
         end
-                
+
         if !down
             prevup = ifelse(c == prevc, prevup, !down)
         else
@@ -182,31 +192,31 @@ end
 # See paper Glasbey 1993 Analysis of Histogram-Based Thresholding Algorithms.
 # It does not work for integer, because isbimodal can get stuck in instability.
 # Smooths the vector according to $y_i = (y_{i-1} + y_i + y_{i+1})/3$.
-function smooth_hist!{T<:FloatingPoint}(hc::AbstractArray{T})
+function smooth_hist!{T<:AbstractFloat}(hc::AbstractArray{T})
     hc[end] = (hc[end-1] + hc[end]) / 3
     prev = hc[1]
     c = hc[2]
     #assume hc[0] = 0 as in paper
     hc[1] = (prev + c)/3
-    @inbounds for i = 2:length(hc)-1        
+    @inbounds for i = 2:(length(hc) - 1)
         nxt = hc[i+1]
-        hc[i] = (prev + c + nxt)/3
-        prev = c 
+        hc[i] = (prev + c + nxt) / 3
+        prev = c
         c = nxt
     end
 end
 # precision does not seem to increase by increasing binsize
-function minimum_threshold(img; bins=256, maxiter=10_000)       
-    hist_range = -1/(bins-1):1/(bins-1):1
-    counts = fasthist(reshape(img,length(img)), hist_range)
+function threshold(img, ::MinimumThreshold; bins=256, maxiter=10_000)
+    hist_range = -1 / (bins-1) : 1 / (bins-1) : 1
+    counts = fasthist(reshape(img, length(img)), hist_range)
     counts = float(counts) # required for convergence!
     cnt = 0
     while cnt < maxiter
         cnt += 1
         smooth_hist!(counts)
         isbimodal(counts) && break
-    end     
+    end
     cnt == maxiter && warn("maximum iteration reached at $cnt in minimum_threshold")
     th = bimodalmin(counts)/bins
 end
-minimum_threshold(polim::PolarImage) = minimum_threshold(pixels(polim))
+threshold(polim::PolarImage, ::MinimumThreshold) = threshold(pixels(polim), MinimumThreshold())

@@ -1,6 +1,6 @@
 # Returns segments of pixelring [θ1, θ2] in n azimuth groups between 0 and 2π
 function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
-    @checkθ1θ2
+    checkθ1θ2(θ1,θ2)
 
     ρ²indstart = searchsortedfirst(polim.cl.ρ²unique, polim.cl.fθρ(θ1)^2) 
       ρ²indend =  searchsortedlast(polim.cl.ρ²unique, polim.cl.fθρ(θ2)^2) 
@@ -13,7 +13,7 @@ function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
     ϕsort = polim.cl.ϕsort
     adj = n/2π    
     @inbounds for ind in indstart:indend
-        indn = iceil((ϕsort[ind]+pi)*adj)
+        indn = ceil(Int, (ϕsort[ind]+pi)*adj)
         push!(segmvec[indn], imgsort[ind])
     end
     segmvec

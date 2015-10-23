@@ -5,7 +5,7 @@ const F_CUTOFF = 1e-3
 const CC_ITER_MAX = 10
 
 function gaplengths(polim::PolarImage, thresh, θ1::Real, θ2::Real)
-    @checkθ1θ2
+    checkθ1θ2(θ1,θ2)
     θ1ind = searchsortedfirst(polim.cl.ρ²sort, polim.cl.fθρ(θ1)^2) 
     θ2ind = searchsortedlast(polim.cl.ρ²sort, polim.cl.fθρ(θ2)^2) 
 
@@ -67,7 +67,7 @@ end
 Memoize.@memoize function Wp_estimation(polim::PolarImage, thresh; 
     θ1=WP_EST_θ1, θ2=WP_EST_θ2, Wp_est_n=WP_EST_N)
     
-    @checkθ1θ2
+    checkθ1θ2(θ1,θ2)
     gaps = gaplengths(polim, thresh, θ1, θ2)
     Wp =  Wp_estimation(probeprob(gaps); n=Wp_est_n)
 end
@@ -78,7 +78,7 @@ function Wp_estimation(P; n=WP_EST_N)
 end
 
 function chencihlar(polim::PolarImage, thresh, θ1::Real, θ2::Real; kwargs...)
-    @checkθ1θ2
+    checkθ1θ2(θ1,θ2)
     # Wp estimation not stable for small zenith angles, so estimate Wp from full image
     if θ1 > WP_EST_θ1
         #TODO add Wp_est_n keyword argument
@@ -93,7 +93,7 @@ end
 function chencihlarF(Wp::Float64, polim::PolarImage, thresh, θ1::Real, θ2::Real;
     cutoff=F_CUTOFF, Wp_est_n=WP_EST_N, itermax=CC_ITER_MAX)
 
-    @checkθ1θ2
+    checkθ1θ2(θ1,θ2)
     gaps = gaplengths(polim, thresh, θ1, θ2)
     length(gaps) == 0 && return(Ω = 1)
     pixs = pixels(polim, θ1, θ2)
@@ -122,7 +122,7 @@ end
 # P-method from Chen & Cihlar, IEEE trans. geo rem. sens. 1995
 # Gives low clumping factors.
 function chencihlarP(polim::PolarImage, thresh, θ1::Real, θ2::Real;n=WP_EST_N)
-    @checkθ1θ2
+    checkθ1θ2(θ1,θ2)
     gaps = gaplengths(polim, thresh, θ1, θ2)
     Pl = probeprob(gaps)
     length(Pl) < 2 && return(1)

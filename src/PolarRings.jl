@@ -10,7 +10,7 @@ type PolarRings{T,A}
 end 
 
 function PolarRings(polim::PolarImage, θ1::Real, θ2::Real)
-    @checkθ1θ2
+    checkθ1θ2(θ1,θ2)
     ind_first = searchsortedfirst(polim.cl.ρ²unique, polim.cl.fθρ(θ1)^2) 
     ind_last = searchsortedlast(polim.cl.ρ²unique, polim.cl.fθρ(θ2)^2)    
     ind = vcat(polim.cl.ρ²unique_ind, length(polim.cl.sort_ind)) #add end index
