@@ -17,6 +17,7 @@
 
 import Images
 
+const OVEREXP = 0.005
 const RAW_EXT = ASCIIString[".3fr", ".ari", ".arw", ".bay", ".crw", ".cr2",
 ".cap", ".dcs", ".dcr", #".dng",
 ".drf", ".eip", ".erf", ".fff", ".iiq", ".k25", ".kdc", ".mdc", ".mef", ".mos", ".mrw",
@@ -56,3 +57,5 @@ function rawblueread(filepath::AbstractString;
     rmtiff && rm(tiff)
     img
 end
+
+isoverexposed(polim::PolarImage) = sum(pixels(polim) .== 1) > OVEREXP * length(polim)
