@@ -1,16 +1,19 @@
 const RIDLER_CALVARD_MAX_ITER = 100
 const RIDLER_CALVARD_TOL = 1e-6
 
+abstract ThresholdMethod
+type RidlerCalvard    <: ThresholdMethod end
+type EdgeDetection    <: ThresholdMethod end
+type MinimumThreshold <: ThresholdMethod end
 
-threshold(polim::PolarImage) = RidlerCalvard(polim)
-RidlerCalvard(polim::PolarImage) = RidlerCalvard(pixels(polim))
+threshold(polim::PolarImage) = threshold(polim, RidlerCalvard())
+threshold(polim::PolarImage, ::RidlerCalvard) = threshold(pixels(polim), RidlerCalvard())
 
-##
-## Ridler Calvard method
-##
+# Ridler Calvard method
+# ---------------------
 
 # adopted with permission from Jason Merrill for MIT license
-function RidlerCalvard(gray::AbstractArray)    
+function threshold(gray::AbstractArray, ::RidlerCalvard)    
     
     # Single pass over input for both high and low mean is
     # almost 5 times faster because no temporary array allocation.
@@ -48,7 +51,7 @@ end
 # Edge detection method
 # ---------------------
 
-# Specialized type for fast circular queue
+"Specialized type for a fast circular queue."
 type circqueue{T}
     array::Vector{T}
     len::Int
@@ -64,7 +67,7 @@ function pushshift!{T}(f::circqueue{T}, input::T)
     output
 end
 
-# optimization function for edge detection
+"Fitness function to be optimized for Edge Detection method."
 function edgefoptim(im, th)
     t = convert(eltype(im), th)
     s = StreamMean()
@@ -99,13 +102,13 @@ function edgefoptim(im, th)
     end
     # The published algorithm uses:
     #    out = mean(s)/2 
-    # but we normalize the contrast mean with the sqrt (because 2D) 
+    # but we multiply the contrast mean with the sqrt (because 2D) 
     # of edges count, to avoid spurious results with high threshold
     # values and very little edges.
     out = mean(s) * sqrt(length(s))
 end
 
-function edge_threshold(gray::AbstractArray)
+function threshold(gray::AbstractArray, ::EdgeDetection)
     # maximization so use negative sign
     res = Optim.optimize(x -> -edgefoptim(gray, x), 0.01, 0.99)
     res.minimum
@@ -117,7 +120,7 @@ It optimizes the threshold to find the maximum value of the contrast mean at edg
 Method is slightly adapted from original by normalizing the contrast mean with the
 sqrt (because 2D) of edges count, to avoid spurious results with high threshold
 values and very little edges."""
-function edge_threshold(polim::PolarImage)
+function threshold(polim::PolarImage, ::EdgeDetection)
     Rmax = ceil(Int, polim.cl.fθρ(π/2))
     ci = polim.cl.ci
     cj = polim.cl.cj
@@ -125,7 +128,7 @@ function edge_threshold(polim::PolarImage)
     rowmax = min(polim.cl.size1, ci + Rmax)
     colmin = max(1, cj - Rmax)
     colmax = min(polim.cl.size2, cj + Rmax)
-    edge_threshold(polim.img[rowmin:rowmax, colmin:colmax])
+    threshold(polim.img[rowmin:rowmax, colmin:colmax], EdgeDetection())
 end
 
 
@@ -203,7 +206,7 @@ function smooth_hist!{T<:AbstractFloat}(hc::AbstractArray{T})
     end
 end
 # precision does not seem to increase by increasing binsize
-function minimum_threshold(img; bins=256, maxiter=10_000)
+function threshold(img, ::MinimumThreshold; bins=256, maxiter=10_000)
     hist_range = -1 / (bins-1) : 1 / (bins-1) : 1
     counts = fasthist(reshape(img, length(img)), hist_range)
     counts = float(counts) # required for convergence!
@@ -216,4 +219,4 @@ function minimum_threshold(img; bins=256, maxiter=10_000)
     cnt == maxiter && warn("maximum iteration reached at $cnt in minimum_threshold")
     th = bimodalmin(counts)/bins
 end
-minimum_threshold(polim::PolarImage) = minimum_threshold(pixels(polim))
+threshold(polim::PolarImage, ::MinimumThreshold) = threshold(pixels(polim), MinimumThreshold())
