@@ -5,9 +5,13 @@ const RING_WIDTH = 5 / 180 * π
 """Number of grouped consecutive ρ² rings for Miller's approach
  (each typically with 4 or 8 pixels)."""
 const MILLER_GROUPS = 10
-"""Start and stop view angle for use in Lang's regression method from Weiss 
+"Minimum number of rings for PolarImages with slope."
+const NRINGS_MIN_SLOPE = 10
+"""Start view angle for use in Lang's regression method from Weiss 
 et al 2004 paragraph 2.2.2.2."""
 const LANG_START = 25/180*pi
+"""Stop view angle for use in Lang's regression method from Weiss 
+et al 2004 paragraph 2.2.2.2."""
 const LANG_END = 65/180*pi
 "Maximum viewing angle used."
 const θMAX = π/2
@@ -49,12 +53,17 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
     inverse(θedges, θmid, K, EllipsOpt(); kwargs...)
 end
 
-"Default number of rings for integration of a Polar Image."
+"Calculate the default number of rings for integration of a Polar Image. 
+Because the logarithm of the gap fraction is calculated, there's a delicate trade off
+between more rings for more algorithmic accuracy and more pixels per ring 
+(i.e. less rings) for more accurate log gap fraction per ring."
 function Nrings_def(polim::PolarImage)
+    N = ceil(Int, polim.cl.fθρ(pi/2) / MILLER_GROUPS)
     if isa(polim.slope, NoSlope)
-        return ceil(Int, polim.cl.fθρ(pi/2) / MILLER_GROUPS)
+        return N
+    else
+        return max(NRINGS_MIN_SLOPE, N / AZIMUTH_GROUPS)
     end
-    return ceil(Int, polim.cl.fθρ(pi/2) / AZIMUTH_GROUPS / MILLER_GROUPS)
 end
 
 
@@ -129,8 +138,8 @@ end
  dθ is incorrect for first and last, but the cos or sin will reduce these terms."""
 function inverse(polim::PolarImage, thresh, ::MillerGroup;
                  group::Integer = MILLER_GROUPS, θmax::Real = θMAX, kwargs...)
-    s = 0.
-    prevθ = 0.
+    s = 0.0
+    prevθ = 0.0
     count = 0
     pixs = eltype(polim)[]
     ϕs = Float64[] # keep ϕ for slope adjustment

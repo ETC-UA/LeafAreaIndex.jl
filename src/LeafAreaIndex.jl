@@ -5,7 +5,7 @@ using Compat
 
 export rawblueread, CameraLens, PolarImage, Slope, 
     pixels, gapfraction, contactfreq,
-    threshold, edge_threshold, minimum_threshold, RidlerCalvard,
+    threshold, EdgeDetection, MinimumThreshold, RidlerCalvard,
     inverse, Zenith57, Miller, Lang, EllipsLUT, EllipsOpt,
     langxiang45, chencihlar,
     calibrate_center, calibrate_projfun

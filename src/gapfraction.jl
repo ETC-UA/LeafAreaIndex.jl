@@ -36,7 +36,7 @@ function loggapfraction(pixs, thresh)
     log(gf)
 end
 
-# Auxilary function to create rings with similar amount of pixels per ring.
+"Auxilary function to create rings with similar amount of pixels per ring."
 function weightedrings(polim::PolarImage, θ1::Real, θ2::Real, N::Integer)
     
     # create edges for θ rings with similar number of pixels each
@@ -77,7 +77,7 @@ function contactfreqs_iterate(pixs::AbstractArray, τs::AbstractArray, thresh, �
 
     τmax = π/2
     τ = Base.midpoints(linspace(0, τmax, Nϕ+1))    
-    Aθτ = fasthist(τs, -1/Nϕ:τmax/Nϕ:τmax)
+    Aθτ = fasthist(τs, -1/Nϕ : τmax/Nϕ : τmax)
 
     iter = 0
     # initially start with contact frequency K from whole θ ring 
@@ -85,7 +85,7 @@ function contactfreqs_iterate(pixs::AbstractArray, τs::AbstractArray, thresh, �
     K = - logT * cos(θ)
     while iter < max_iter
         iter += 1 
-        Tnew = sum(Aθτ .* exp(-K./cos(τ))) / sum(Aθτ)
+        Tnew = sum(Aθτ .* exp(-K ./ cos(τ))) / sum(Aθτ)
         logTnew = log(Tnew)
         abs(logTnew / logT - 1) < tol && break
         K *= logTnew / logT
@@ -108,7 +108,7 @@ function contactfreqs(polim::PolarImage, sl::Slope, θ1::Real, θ2::Real,
           ρ²indend =  searchsortedlast(polim.cl.ρ²unique, polim.cl.fθρ(θedges[i+1])^2) 
         indstart = polim.cl.ρ²unique_ind[ρ²indstart]
           indend = polim.cl.ρ²unique_ind[ρ²indend]
-        τs = ArrayViews.view(polim.τsort,indstart:indend)
+        τs = ArrayViews.view(polim.τsort, indstart:indend)
         
         K[i] = contactfreqs_iterate(pixs, τs, thresh, θmid[i]; 
                                     Nϕ=Nϕ, max_iter=max_iter, tol=tol)
