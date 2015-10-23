@@ -13,7 +13,7 @@ function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
     ϕsort = polim.cl.ϕsort
     adj = n/2π    
     @inbounds for ind in indstart:indend
-        indn = iceil((ϕsort[ind]+pi)*adj)
+        indn = ceil(Int, (ϕsort[ind]+pi)*adj)
         push!(segmvec[indn], imgsort[ind])
     end
     segmvec

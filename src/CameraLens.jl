@@ -1,11 +1,12 @@
 ## CameraLens ##
 
-# Type including distance to center ρ and polar angle ϕ for each pixel.
-# Useful for quickly accessing polar rings and segments.
-# This is Camera + Lens dependent, but it's the same for each of its pictures,
-# so ρ² and ϕ only need to be (pre)calculated per camera+lens once.
-# (Note UInt32 sufficient to store ρ²).
-# We assume the lens has at least 180ᵒ field of view.
+"""
+Type including distance to center ρ and polar angle ϕ for each pixel.
+Useful for quickly accessing polar rings and segments, because of memory layout.
+This is Camera + Lens dependent, but it's the same for each of its pictures,
+so ρ² and ϕ only need to be (pre)calculated per camera+lens once.
+We assume the lens has at least 180ᵒ field of view.
+"""
 immutable CameraLens
     size1::Int #number of rows in picture (heigth)
     size2::Int #number of columns in picture (width)
@@ -16,6 +17,7 @@ immutable CameraLens
     #ρ²::Array{UInt32,2}     #squared distance to center for each point
     #ϕ::Array{Float64,2}     #azimuth angle [-π,π]
     sort_ind::Vector{Int}   #indices to sort according to ρ², then ϕ
+    # Note UInt32 is sufficient to store ρ².
     spiral_ind::Vector{Int} #indices to sort according to spiral: ρ² per pixel width, then ϕ
     ρ²sort::Vector{UInt32}  #ρ² sorted by sort_ind
     ϕsort::Vector{Float64}  #ϕ sorted by sort_ind
@@ -23,7 +25,7 @@ immutable CameraLens
     ρ²unique_ind::Vector{UInt32}   #(start) indices of each unique ρ² for use in ρ²sort
 end
 
-# auxiliary function to count the number of unique ρ² and their index
+"Auxiliary function to count the number of unique ρ² and their index for CameraLens."
 function count_unique(ρ²sort)
     issorted(ρ²sort) || error("ρ²sort not sorted")
     ρ²unique = unique(ρ²sort)
@@ -43,12 +45,14 @@ function count_unique(ρ²sort)
         end
         prevρ² = ρ²
     end
-    ρ²unique, unshift!(cumsum(ρ²uniquecounts)+1,1)
+    ρ²unique, unshift!(cumsum(ρ²uniquecounts) + 1, 1)
 end
 
-# spiral indices: combine ρ² for a ring of single pixel width and then sort on ϕ.
-# Assumes implicitely an offset of -π, where spiral jumps to next ring.
-# Used for gap lengths in Chen Chilar clumping.
+"""
+Spiral indices: combine ρ² for a ring of single pixel width and then sort on ϕ.
+Assumes implicitely an offset of -π, where spiral jumps to next ring.
+Used for gap lengths in Chen Chilar clumping.
+"""
 function spiralindex(ind, ρmax, ρ²unique, ρ²unique_ind, ϕsort)
     spiralind = similar(ind)
     ρ²spiralind = Int[] #temp array for ring of single pixel ρ² indices
@@ -99,8 +103,8 @@ function check_calibration_inputs(size1, size2, ci::Int, cj::Int, fθρ::Functio
     return true
 end
 
-# CameraLens constructor function
-function calibrate(size1::Int, size2::Int, ci::Int, cj::Int, fθρ::Function, fρθ::Function)
+"CameraLens constructor function."
+function CameraLens(size1::Int, size2::Int, ci::Int, cj::Int, fθρ::Function, fρθ::Function)
 
     check_calibration_inputs(size1, size2, ci, cj, fθρ, fρθ)
 
@@ -143,10 +147,10 @@ function Base.show(io::IO, cl::CameraLens)
 end
 Base.writemime(io::IO, ::MIME"text/plain", cl::CameraLens) = show(io, cl)
 
-# generic constructor for testing
-function gencalibrate(M::AbstractMatrix)
+"Generic constructor for testing"
+function CameraLens(M::AbstractMatrix)
     size1, size2 = size(M)
-    ci,cj = iceil(size1/2), iceil(size2/2) #center point
+    ci, cj = ceil(Int, size1/2), ceil(Int, size2/2) #center point
     ρmax = min(ci, cj, size2-ci, size2-cj)
     fθρ(θ) = θ / (π/2) * ρmax
     fρθ(ρ) = ρ / ρmax * π/2

@@ -3,7 +3,7 @@ module LeafAreaIndex
 import FixedPointNumbers, ArrayViews, Optim, Memoize, LsqFit, FastAnonymous
 using Compat
 
-export calibrate, PolarImage, Slope,
+export rawblueread, CameraLens, PolarImage, Slope, 
     pixels, gapfraction, contactfreq,
     threshold, edge_threshold, minimum_threshold, RidlerCalvard,
     inverse, Zenith57, Miller, Lang, EllipsLUT, EllipsOpt,

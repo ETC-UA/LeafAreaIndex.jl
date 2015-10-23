@@ -76,7 +76,7 @@ function contactfreqs_iterate(pixs::AbstractArray, τs::AbstractArray, thresh, �
         Nϕ=AZIMUTH_GROUPS, max_iter=MAX_ITER_τ, tol=SLOPE_TOL)
 
     τmax = π/2
-    τ = midpoints(linspace(0, τmax, Nϕ+1))    
+    τ = Base.midpoints(linspace(0, τmax, Nϕ+1))    
     Aθτ = fasthist(τs, -1/Nϕ:τmax/Nϕ:τmax)
 
     iter = 0
