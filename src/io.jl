@@ -56,5 +56,5 @@ function rawblueread(filepath::AbstractString;
     img
 end
 
-isoverexposed(img::AbstractArray) = sum(polim .== 1) > OVEREXP * length(polim)
+isoverexposed(img::AbstractArray) = sum(img .== 1) > OVEREXP * length(img)
 isoverexposed(polim::PolarImage) = isoverexposed(pixels(polim))

@@ -13,12 +13,14 @@ end
 
 # PolarImage constructor
 function PolarImage(img::AbstractMatrix, cl::CameraLens)
+    size(img) == size(cl) || error("Size image ($(size(img))) does not correspond with size CameraLens ($(size(cl))).")
     imgsort = img[cl.sort_ind]
     imgspiral = img[cl.spiral_ind]
     τsort = create_τsort(NoSlope(), cl)
     PolarImage{eltype(img), typeof(img)}(cl, NoSlope(), img, imgsort, imgspiral, τsort)
 end
 function PolarImage(img::AbstractMatrix, cl::CameraLens, slope::SlopeInfo)
+    size(img) == size(cl) || error("Size image ($(size(img))) does not correspond with size CameraLens ($(size(cl))).")
     imgsort = img[cl.sort_ind]
     imgspiral = img[cl.spiral_ind]
     τsort = create_τsort(slope, cl)
@@ -73,6 +75,7 @@ genPolarImage(M) = PolarImage(M, gencalibrate(M))
 
 Base.eltype{T}(polim::PolarImage{T}) = T
 Base.length(pm::PolarImage) = length(pm.cl.ρ²sort)
+Base.size(pm::PolarImage) = size(pm.img)
 
 function Base.show(io::IO, polim::PolarImage)
     with_out = ifelse(isa(polim.slope, NoSlope), "without", "with")

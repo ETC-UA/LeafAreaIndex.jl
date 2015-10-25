@@ -147,6 +147,9 @@ function Base.show(io::IO, cl::CameraLens)
 end
 Base.writemime(io::IO, ::MIME"text/plain", cl::CameraLens) = show(io, cl)
 
+Base.size(cl::CameraLens) = (cl.size1, cl.size2)
+Base.length(cl::CameraLens) = prod(size(cl))
+
 "Generic constructor for testing"
 function CameraLens(M::AbstractMatrix)
     size1, size2 = size(M)
