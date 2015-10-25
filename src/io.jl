@@ -15,8 +15,6 @@
 # * -r 0 0 0 1: select only the blue channel (see Brusa and Bunker, 2014). This option selects from a bayer RGGB layout.
 # * -v for verbose output
 
-import Images
-
 const OVEREXP = 0.005
 const RAW_EXT = ASCIIString[".3fr", ".ari", ".arw", ".bay", ".crw", ".cr2",
 ".cap", ".dcs", ".dcr", #".dng",
@@ -58,4 +56,5 @@ function rawblueread(filepath::AbstractString;
     img
 end
 
-isoverexposed(polim::PolarImage) = sum(pixels(polim) .== 1) > OVEREXP * length(polim)
+isoverexposed(img::AbstractArray) = sum(polim .== 1) > OVEREXP * length(polim)
+isoverexposed(polim::PolarImage) = isoverexposed(pixels(polim))
