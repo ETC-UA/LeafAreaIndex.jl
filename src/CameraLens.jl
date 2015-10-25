@@ -8,8 +8,8 @@ so ρ² and ϕ only need to be (pre)calculated per camera+lens once.
 We assume the lens has at least 180ᵒ field of view.
 """
 immutable CameraLens
-    size1::Int #number of rows in picture (heigth)
-    size2::Int #number of columns in picture (width)
+    size1::Int #number of rows of image = size(image, 1)
+    size2::Int #number of columns of image = size(image, 2)
     ci::Int    #lens center is located at image[ci,cj]
     cj::Int
     fθρ::Function           #projection function θ → ρ (θ in [0,π/2], ρ in pixels)

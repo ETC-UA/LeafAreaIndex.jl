@@ -1,6 +1,6 @@
 module LeafAreaIndex
 
-import FixedPointNumbers, ArrayViews, Optim, Memoize, LsqFit, FastAnonymous
+import FixedPointNumbers, ArrayViews, Optim, Memoize, LsqFit, FastAnonymous, Images
 using Compat
 
 export rawblueread, CameraLens, PolarImage, Slope, 
