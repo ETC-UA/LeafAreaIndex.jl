@@ -35,19 +35,22 @@ type LAIresult{T<:LeafAreaIndex.ThresholdMethod}
     thresh::Float64
     thresh_method::T
     clump::Float64
+    overexp::Bool
 end
 
 function getLAI(file::AbstractString, cl::CameraLens)
     polim = PolarImage(file, cl)
     binars = [RidlerCalvard(), EdgeDetection(), MinimumThreshold()]
     
+    oe = LeafAreaIndex.isoverexposed(polim)
+
     lais = LAIresult[]
     for binar in binars
     	thresh = threshold(polim, binar)
     	Ω = langxiang45(polim, thresh, 0, pi/2)
     	LAIe = inverse(polim, thresh)
     	filename = last(splitdir(file))
-    	push!(lais, LAIresult(filename, LAIe / Ω, Float64(thresh), binar, Ω))
+    	push!(lais, LAIresult(filename, LAIe / Ω, Float64(thresh), binar, Ω, oe))
 	end
 	lais
 end
