@@ -1,7 +1,6 @@
 module LeafAreaIndex
 
 import FixedPointNumbers, ArrayViews, Optim, Memoize, LsqFit, FastAnonymous, Images
-using Compat
 
 export rawblueread, CameraLens, PolarImage, Slope, 
     pixels, gapfraction, contactfreq,
@@ -9,9 +8,6 @@ export rawblueread, CameraLens, PolarImage, Slope,
     inverse, Zenith57, Miller, Lang, EllipsLUT, EllipsOpt,
     langxiang45, chencihlar,
     calibrate_center, calibrate_projfun
-
-# Keep compatibility with v0.3 where possible
-VERSION < v"0.4-" && using Docile
 
 # reoccuring argument checks
 function checkθ1θ2(θ1, θ2)
