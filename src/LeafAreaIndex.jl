@@ -1,6 +1,7 @@
 module LeafAreaIndex
 
-import FixedPointNumbers, ArrayViews, Optim, Memoize, LsqFit, FastAnonymous, Images
+import FixedPointNumbers, ArrayViews, Optim, Memoize, LsqFit, FastAnonymous, Images,
+       Netpbm
 
 export rawblueread, CameraLens, PolarImage, Slope, 
     pixels, gapfraction, contactfreq,

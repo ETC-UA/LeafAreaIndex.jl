@@ -1,5 +1,5 @@
 julia 0.4
-FixedPointNumbers
+FixedPointNumbers 0.1
 ArrayViews
 Optim
 Memoize
@@ -9,3 +9,4 @@ DataFrames
 Winston
 Graphics
 Images
+Netpbm

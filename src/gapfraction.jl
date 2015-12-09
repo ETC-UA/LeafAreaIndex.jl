@@ -3,8 +3,6 @@ const AZIMUTH_GROUPS = 360 #number of τ groups per 2π
 const MAX_ITER_τ = 5 # (Schleppi, 2007) says "after a few cycles"
 const SLOPE_TOL = 1e-3
 
-# for ease of notation:
-Ufixed = FixedPointNumbers.Ufixed
 
 #fallback
 gapfraction(pixs, thresh) = mean(pixs .> thresh)
@@ -18,10 +16,11 @@ function gapfraction(pixs::AbstractArray, thresh)
     end
     return(gapfrsum / length(pixs))
 end
+
 # specialized gapfraction method for Ufixed pixels, with threshold already 
 # converted to Ufixed type for type stability.
 # TODO check time difference against general function 
-function gapfraction{T<:Ufixed}(pixs::AbstractArray{T}, thresh)
+function gapfraction{T<:FixedPointNumbers.UFixed}(pixs::AbstractArray{T}, thresh)
     threshT = convert(T, thresh)
     gapfrsum = zero(Int)        
     for pix in pixs
