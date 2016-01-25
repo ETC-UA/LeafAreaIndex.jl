@@ -86,7 +86,7 @@ function check_calibration_inputs(size1, size2, ci::Int, cj::Int, fθρ::Functio
     abs(cj/size2 - 0.5) > 0.2 && error("cj ($cj) more than 20% away from center ($(size1/2)).")
 
     @assert fθρ(0.0) >= 0
-    @assert fθρ(pi/2) > 2 
+    @assert fθρ(pi/2) >= 2 
     all(diff(map(fθρ, linspace(0, pi/2, 100))) .> 0) || error("Incorrectly defined fθρ; fθρ not monotonic")
 
     fρθ(0) < 0. && error("Incorrectly defined fρθ; fρθ(0) < 0.")
