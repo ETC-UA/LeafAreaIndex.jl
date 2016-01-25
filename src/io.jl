@@ -1,5 +1,10 @@
 # We use [dcraw](http://www.cybercom.net/~dcoffin/dcraw/) to extract from RAW images
-# the blue channel pixels and convert to 16bit pgm without exposure manipulation.
+# the blue channel pixels and convert to 16bit pgm without exposure manipulation. 
+# The website notes: "Unless otherwise noted in the source code, these programs 
+# are free for all uses, although I would like to receive credit for them."
+# The program dcraw is written by Dave Coffin.
+
+
 
 # On mac, compile dcraw.c with
 # 	`llvm-gcc -o dcraw dcraw.c -lm -DNO_JPEG -DNO_LCMS -DNO_JASPER`
