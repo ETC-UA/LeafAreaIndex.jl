@@ -14,7 +14,7 @@ export rawblueread, CameraLens, PolarImage, Slope,
 function checkθ1θ2(θ1, θ2)
     θ1 < 0   && throw(DomainError())
     θ2 > π/2 && throw(DomainError())
-    θ2 < θ1  && error("θ2 < θ1")
+    @assert θ2 < θ1
 end
 
 "Specialed type for immutable streaming sum, based on PR #18 from StreamStats.jl"

@@ -13,14 +13,14 @@ end
 
 # PolarImage constructor
 function PolarImage(img::AbstractMatrix, cl::CameraLens)
-    size(img) == size(cl) || error("Size image ($(size(img))) does not correspond with size CameraLens ($(size(cl))).")
+    @assert size(img) == size(cl)
     imgsort = img[cl.sort_ind]
     imgspiral = img[cl.spiral_ind]
     τsort = create_τsort(NoSlope(), cl)
     PolarImage{eltype(img), typeof(img)}(cl, NoSlope(), img, imgsort, imgspiral, τsort)
 end
 function PolarImage(img::AbstractMatrix, cl::CameraLens, slope::SlopeInfo)
-    size(img) == size(cl) || error("Size image ($(size(img))) does not correspond with size CameraLens ($(size(cl))).")
+    @assert size(img) == size(cl)
     imgsort = img[cl.sort_ind]
     imgspiral = img[cl.spiral_ind]
     τsort = create_τsort(slope, cl)

@@ -1,9 +1,9 @@
 # We use [dcraw](http://www.cybercom.net/~dcoffin/dcraw/) to extract from RAW images
 # the blue channel pixels and convert to 16bit pgm without exposure manipulation. 
+
 # The website notes: "Unless otherwise noted in the source code, these programs 
 # are free for all uses, although I would like to receive credit for them."
 # The program dcraw is written by Dave Coffin.
-
 
 
 # On mac, compile dcraw.c with
@@ -11,13 +11,13 @@
 # source [http://vkphotoblog.blogspot.be/2014/05/dcraw-921-for-os-x-mavericks-users.html]
 
 # ### dcraw options
-# * -W avoids stretching ("No matter how dark an image is, dcraw's auto-exposure stretches it so that one percent of its pixels appear white. The "-W" option avoids this behavior.")
-# * -4 is for linear 16-bit, same as -6 -W -g 1 1 (with -g for gamma correction)
-# * -j: don't strecht or rotate raw pixels
+# * -W: avoids stretching ("No matter how dark an image is, dcraw's auto-exposure stretches it so that one percent of its pixels appear white. The "-W" option avoids this behavior.")
+# * -4: is for linear 16-bit, same as -6 -W -g 1 1 (with -g for gamma correction)
+# * -j: don't stretch or rotate raw pixels
 # * -t [0-7]: flip image (0=none)
 # * -D: document mode without scaling (totally raw), while -d scales to 16bit (eg from 14bit). Either use -D and then reinterpret in julia or use -d. We now use -d otherwise we need to extract image property for bit depth (12bit, 14bit, ...).
 # * -r 0 0 0 1: select only the blue channel (see Brusa and Bunker, 2014). This option selects from a bayer RGGB layout.
-# * -v for verbose output
+# * -v: for verbose output
 
 
 const OVEREXP = 0.005
@@ -39,9 +39,9 @@ a temporary directory and run through dcraw with options `-d -4 -j -t 0 -r 0 0 0
 function rawblueread(filepath::AbstractString;
     overwrite=false, destdir=joinpath(tempdir(), "pgm"), rmcopy=true, rmpgm=true)
 
-    isfile(filepath) || error()
+    @assert isfile(filepath) 
     ext = lowercase(splitext(filepath)[end])
-    ext ∈ RAW_EXT || error("File extension $ext not in list RAW_EXT. Filepath given $filepath")
+    @assert ext ∈ RAW_EXT
     isdir(destdir) || mkdir(destdir)
 
     raw2pgm(f) = run(`$DCRAW_EXE -d -4 -j -t 0 -r 0 0 0 1 $f`)

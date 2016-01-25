@@ -27,7 +27,7 @@ function calibrate_center(df::DataFrame, height::Int, width::Int)
 
     # First we check the dataframe input and create Nρ and Nϕ, resp. number of circles and
     # points per circle.
-    width >= height || error("Width is smaller than height.")
+    @assert width >= height
     for name = [:x, :y, :circle]
         name in names(df) || error("Column $name not found in dataframe input.")
     end
@@ -36,14 +36,14 @@ function calibrate_center(df::DataFrame, height::Int, width::Int)
 
     pool!(df, :circle)
     Nρ = length(levels(df[:circle]))
-    3 <= Nρ <= 5 || error("3 to 5 dots per picture expected.")
+    @assert 3 <= Nρ <= 5
 
     all(by(df, :circle, length)[2]) > 0 || error("Different number of pictures per circle.")
     Nϕ = int(nrow(df) / Nρ)
-    Nϕ * Nρ == nrow(df) || error("Inconsistent dataframe row count.")
+    @assert Nϕ * Nρ == nrow(df)
 
-    all(df[:x] .< width)  || error("Some x coordinates larger than width.")
-    all(df[:y] .< height) || error("Some y coordinates larger than height.")
+    @assert all(df[:x] .< width)
+    @assert all(df[:y] .< height)
 
     # Create Matrix of Points with a column per circle.
     points = Point[]
@@ -107,20 +107,20 @@ const N_LATERAL = 5 # number of points on side taken for Δ estimation
 function calibrate_projfun(df::DataFrame, height::Int, width::Int)
 
     # First we check the dataframe inputs
-    width >= height || error("Width is smaller than height.")
+    @assert width >= height 
     for name = [:cm, :px, :H, :pos]
-        name in names(df) || error("Column $name not found in dataframe input.")
+        @assert name in names(df)
     end
     eltype(df[:cm]) <: Real || throw(DomainError("Column :cm should be numeric."))
     eltype(df[:px]) <: Real || throw(DomainError("Column :px should be numeric."))
 
-    all(df[:px] .< width)  || error("Some x coordinates are larger than the picture width.")
+    @assert all(df[:px] .< width)
 
     #pool!(df, [:H, :pos])
-    length(levels(df[:H])) == 2  || error("Expected exactly 2 different values for :H column.")
-    length(levels(df[:pos])) == 3|| error("Expected exactly 3 different values for :pos column.")
+    @assert length(levels(df[:H])) == 2
+    @assert length(levels(df[:pos])) == 3
     for name = ["right", "left", "perpendicular"]
-        name in levels(df[:pos]) || error("In column :pos no values found equal to $name.")
+        @assert name in levels(df[:pos])
     end
 
 

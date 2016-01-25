@@ -27,7 +27,7 @@ end
 
 "Auxiliary function to count the number of unique ρ² and their index for CameraLens."
 function count_unique(ρ²sort)
-    issorted(ρ²sort) || error("ρ²sort not sorted")
+    @assert issorted(ρ²sort)
     ρ²unique = unique(ρ²sort)
     ρ²uniquecounts = zeros(UInt32, length(ρ²unique)-1)
     ρ²uniquecounts[1] = 1
@@ -77,10 +77,7 @@ using Base.Test
 function check_calibration_inputs(size1, size2, ci::Int, cj::Int, fθρ::Function,
                                   fρθ::Function)
 
-    size1 < 0 && error(BoundsError())
-    size2 < 0 && error(BoundsError())
-    ci < 0 && error(BoundsError())
-    cj < 0 && error(BoundsError())
+    @assert size1 > 0 && size2 > 0 && ci > 0 && cj > 0
 
     abs(ci/size1 - 0.5) > 0.1 && warn("ci ($ci) more than 10% away from center ($(size1/2).")
     abs(cj/size2 - 0.5) > 0.1 && warn("cj ($cj) more than 10% away from center ($(size1/2)).")
@@ -88,8 +85,8 @@ function check_calibration_inputs(size1, size2, ci::Int, cj::Int, fθρ::Functio
     abs(ci/size1 - 0.5) > 0.2 && error("ci ($ci) more than 20% away from center ($(size1/2).")
     abs(cj/size2 - 0.5) > 0.2 && error("cj ($cj) more than 20% away from center ($(size1/2)).")
 
-    fθρ(0.) < 0 && error("Incorrectly defined fθρ; fθρ(0) < 0.")
-    fθρ(pi/2) < 2 && error("Incorrectly defined fθρ; fθρ(π/2) < 2")
+    @assert fθρ(0.0) >= 0
+    @assert fθρ(pi/2) > 2 
     all(diff(map(fθρ, linspace(0, pi/2, 100))) .> 0) || error("Incorrectly defined fθρ; fθρ not monotonic")
 
     fρθ(0) < 0. && error("Incorrectly defined fρθ; fρθ(0) < 0.")

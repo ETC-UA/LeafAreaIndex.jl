@@ -164,7 +164,7 @@ function isbimodal(hc) #hc=histcounts
 end
 # find the minimim between modes if bimodal
 function bimodalmin(hc)
-    isbimodal(hc) || error("input is not yet bimodal")
+    @assert isbimodal(hc)
     prevup = hc[2] > hc[1]
     prevc = hc[2]
     mode = 0
