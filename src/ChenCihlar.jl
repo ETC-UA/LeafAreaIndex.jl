@@ -64,7 +64,7 @@ end
 # choice of the elementh width within a reasonable range" (Chen,Chilar 1995, 
 # applied optics, section 4.B).
 # Wp estimation according to Leblanc et al, 2005, formula (7).
-Memoize.@memoize function Wp_estimation(polim::PolarImage, thresh; 
+function Wp_estimation(polim::PolarImage, thresh; 
     θ1=WP_EST_θ1, θ2=WP_EST_θ2, Wp_est_n=WP_EST_N)
     
     checkθ1θ2(θ1,θ2)

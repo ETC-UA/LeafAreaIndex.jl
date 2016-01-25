@@ -27,7 +27,6 @@ function PolarImage(img::AbstractMatrix, cl::CameraLens, slope::SlopeInfo)
     PolarImage{eltype(img), typeof(img)}(cl, slope, img, imgsort, imgspiral,τsort)
 end
 
-# removed Memoize.@memoize b/c memory will not be freed. 
 function create_τsort(sl::NoSlope, cl::CameraLens)
     # create θ in case of no slope
     τsort = similar(cl.ϕsort)
@@ -38,7 +37,7 @@ function create_τsort(sl::NoSlope, cl::CameraLens)
     end
     τsort
 end
-# removed Memoize.@memoize b/c memory will not be freed.
+
 function create_τsort(sl::Slope, cl::CameraLens)
     τsort = deepcopy(cl.ϕsort)
     ρ²sort = cl.ρ²sort    
