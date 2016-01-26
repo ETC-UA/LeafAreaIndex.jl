@@ -97,5 +97,6 @@ For the *gapfraction*, we suggest (see online documentation) to use the contact 
 
 In case of problems or suggestion, don't hesitate to submit an issue through the issue tracker or code suggestions through a pull request.
 
-
+## Documentation
+Documentation is hosted on readthedocs: http://leafareaindexjl.readthedocs.org .
 
