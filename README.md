@@ -1,7 +1,7 @@
 # LeafAreaIndex
 
 [![Build Status](https://travis-ci.org/ETC-UA/LeafAreaIndex.jl.svg?branch=master)](https://travis-ci.org/ETC-UA/LeafAreaIndex.jl)
-[![Documentation Status](https://readthedocs.org/projects/leafareaindexjl/badge/?version=latest)](https://readthedocs.org/projects/leafareaindexjl/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/leafareaindexjl/badge/?version=master)](https://readthedocs.org/projects/leafareaindexjl/?badge=master)
 
 Tools to work with [hemispherical pictures](http://en.wikipedia.org/wiki/Hemispherical_photography) for the determination of [Leaf Area Index (LAI)](http://en.wikipedia.org/wiki/Leaf_area_index).
 
