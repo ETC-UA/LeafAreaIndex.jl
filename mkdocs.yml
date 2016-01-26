@@ -6,7 +6,7 @@ site_dir: 'doc_site'
 theme: readthedocs
 
 python:
-   version: 2
+   version: 2 # for unicode
    setup_py_install: true
 
 #the third-party extenison mdx_math.py comes with a setup.py script
