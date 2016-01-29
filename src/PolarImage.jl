@@ -19,13 +19,16 @@ function PolarImage(img::AbstractMatrix, cl::CameraLens)
     τsort = create_τsort(NoSlope(), cl)
     PolarImage{eltype(img), typeof(img)}(cl, NoSlope(), img, imgsort, imgspiral, τsort)
 end
-function PolarImage(img::AbstractMatrix, cl::CameraLens, slope::SlopeInfo)
+
+function PolarImage(img::AbstractMatrix, cl::CameraLens, slope::Slope)
     @assert size(img) == size(cl)
     imgsort = img[cl.sort_ind]
     imgspiral = img[cl.spiral_ind]
     τsort = create_τsort(slope, cl)
     PolarImage{eltype(img), typeof(img)}(cl, slope, img, imgsort, imgspiral,τsort)
 end
+
+PolarImage(img::AbstractMatrix, cl::CameraLens, slope::NoSlope) = PolarImage(img, cl)
 
 function create_τsort(sl::NoSlope, cl::CameraLens)
     # create θ in case of no slope
