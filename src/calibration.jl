@@ -3,7 +3,7 @@ using Graphics: Point, norm
 using Optim
 using DataFrames
 # TODO use Gadfly or Compose instead of Winston, b/c it will not precompile
-import Winston
+#import Winston
 
 # some auxilary functions
 dist(p::Point, q::Point) = norm(p-q)
@@ -208,15 +208,15 @@ function calibrate_projfun(df::DataFrame, height::Int, width::Int)
     end
 
     # plot to spot outliers
-    function plotfit(H,c)
-        lens = df[df[:H] .== H, :]
-        θ, ρ = projfunpoints(lens, c, H)
-        Winston.plot(θ, ρ, "o")
-        a, b = abfit(θ, ρ)
-        Winston.oplot(θ -> a*θ + b*θ.^2, 0, pi/2, "r")
-        Winston.title("Observations and fit for $H")
-    end
-    display(plotfit(H1, c1)); display(plotfit(H2, c2))
+    #function plotfit(H,c)
+    #    lens = df[df[:H] .== H, :]
+    #    θ, ρ = projfunpoints(lens, c, H)
+    #    Winston.plot(θ, ρ, "o")
+    #    a, b = abfit(θ, ρ)
+    #    Winston.oplot(θ -> a*θ + b*θ.^2, 0, pi/2, "r")
+    #    Winston.title("Observations and fit for $H")
+    #end
+    #display(plotfit(H1, c1)); display(plotfit(H2, c2))
 
     function projfundiff(H, Δ, lens1, lens2, center1, center2)
         a1, b1 = abfit(projfunpoints(lens1, center1, H)...)

@@ -56,7 +56,7 @@ include("gapfraction.jl")
 include("inversion.jl")
 include("clumping.jl")
 include("ChenCihlar.jl")
-#include("calibration.jl")
+include("calibration.jl")
 include("io.jl")
 
 end # module
