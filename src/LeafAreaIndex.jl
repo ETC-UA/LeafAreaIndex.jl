@@ -2,8 +2,7 @@ __precompile__()
 
 module LeafAreaIndex
 
-import FixedPointNumbers, ArrayViews, Optim, LsqFit, FastAnonymous,
-       Netpbm
+import Optim, FileIO, Netpbm
 
 export rawblueread, CameraLens, PolarImage, Slope, 
     pixels, gapfraction, contactfreq,
@@ -49,7 +48,6 @@ include("CameraLens.jl")
 include("Slope.jl")
 include("PolarImage.jl")
 include("PolarRings.jl")
-include("PolarPixels.jl")
 include("PolarSegments.jl")
 include("thresholding.jl")
 include("gapfraction.jl")

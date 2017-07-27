@@ -24,15 +24,15 @@ Better to use a simple method such as `zenith57` or `lang` for a realistic
 LAI starting point for keyword argument `LAI_init`."""
 const DEFAULT_LAI_INIT = 3.0
 
-abstract InversionMethod
-type Zenith57    <: InversionMethod end
-type Lang        <: InversionMethod end
-type Miller      <: InversionMethod end
-type MillerGroup <: InversionMethod end
-type MillerNaive <: InversionMethod end
-type MillerRings <: InversionMethod end
-type EllipsOpt   <: InversionMethod end
-type EllipsLUT   <: InversionMethod end
+abstract type InversionMethod end
+struct Zenith57    <: InversionMethod end
+struct Lang        <: InversionMethod end
+struct Miller      <: InversionMethod end
+struct MillerGroup <: InversionMethod end
+struct MillerNaive <: InversionMethod end
+struct MillerRings <: InversionMethod end
+struct EllipsOpt   <: InversionMethod end
+struct EllipsLUT   <: InversionMethod end
 
 
 ## Generic function
@@ -193,9 +193,9 @@ G_ellips(θᵥ, χ) = cos(θᵥ) * sqrt(χ^2 + tan(θᵥ)^2) / (χ + 1.702 * (χ
 ALIA_to_x(ALIA) = (ALIA / 9.65).^-0.6061 - 3
 
 "The model that links ALIA and LAI with contact frequency K"
-function model_ellips(θmid::Vector{Float64}, params::Vector{Float64})
-    alia, L = params
-    K = Float64[L * G_ellips(θᵥ, ALIA_to_x(alia)) for θᵥ in θmid]
+function model_ellips(θmid::Vector, params::Vector)
+    alia, LAI = params
+    K = [LAI * G_ellips(θᵥ, ALIA_to_x(alia)) for θᵥ in θmid]
 end
 
 """
@@ -207,7 +207,7 @@ This method uses a curve fitting technique to find the optimal values for the le
 distribution parameter ALIA and the LAI.
 """
 function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float64}, ::EllipsOpt;
-                 LAI_init::Float64 = DEFAULT_LAI_INIT, kwargs...)
+                 LAI_init::Float64 = DEFAULT_LAI_INIT)
 
     LAI_init == DEFAULT_LAI_INIT && warn("Default value detected for `LAI_init`, it's better to use an estimate from `zenith57`.")
     if !(0.2 < LAI_init < 9)
@@ -218,23 +218,25 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
     # Find an initial value for ALIA
     fitfunalia(alia) = sum((model_ellips(θmid, [alia, LAI_init]) .- K).^2)
     aliares = Optim.optimize(fitfunalia, 0.1, pi/2 - 0.1)
-    ALIA_init = aliares.minimum
+    ALIA_init = Optim.minimizer(aliares)
+
+    # Optimize both ALIA and LAI at same time
+    fitfun(x) = sum((K .- model_ellips(θmid, x)).^2)
+    initial = [ALIA_init, LAI_init]
+    fitdf = Optim.OnceDifferentiable(fitfun, initial; autodiff = :forward)
 
     try
-        res = LsqFit.curve_fit(model_ellips, θmid, K, [ALIA_init, LAI_init])
-        ALIA, LAI = res.param
+        res = Optim.optimize(fitdf, initial, Optim.LBFGS())
+        ALIA, LAI = Optim.minimizer(res)
         return LAI
     catch y
         if isa(y, DomainError)
             # in case LsqFit.curve_fit does not converge and wanders out of the
-            # parameter space, use Optim.fminbox.
-            # TODO register MinFinder and use minfinder
+            # parameter space, use box constrained optimization.
             lower = [0.1, 0.2]
-            upper = [pi/2 - 0.1, 9]
-            fitfun(x) = sum((K .- model_ellips(θmid,x)).^2)
-            fitdf = fitdf = Optim.DifferentiableFunction(fitfun)
-            res = Optim.fminbox(fitdf, [ALIA_init, LAI_init], lower, upper)
-            ALIA, LAI = res.minimum
+            upper = [pi/2 - 0.1, 9]            
+            res = Optim.optimize(fitfun, initial, lower, upper, Optim.Fminbox{Optim.LBFGS}())
+            ALIA, LAI = Optim.minimizer(res.minimum)
             return LAI
         else
             throw(y)
@@ -244,7 +246,7 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
 end
 
 function inverse(polim::PolarImage, thresh, ::EllipsOpt;                     
-                    Nrings = Nrings_def(polim), θmax = θMAX, kwargs...)
+                    Nrings = Nrings_def(polim), θmax = θMAX)
     
     θedges, θmid, K = contactfreqs(polim, 0.0, θmax, Nrings, thresh)
     # Find inital value for LAI for optimization

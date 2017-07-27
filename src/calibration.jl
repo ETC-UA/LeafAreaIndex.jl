@@ -1,9 +1,8 @@
 using Graphics: Point, norm
 
-using Optim
+using Optim: optimize
 using DataFrames
-# TODO use Gadfly or Compose instead of Winston, b/c it will not precompile
-#import Winston
+
 
 # some auxilary functions
 dist(p::Point, q::Point) = norm(p-q)

@@ -17,18 +17,6 @@ function gapfraction(pixs::AbstractArray, thresh)
     return(gapfrsum / length(pixs))
 end
 
-# specialized gapfraction method for Ufixed pixels, with threshold already 
-# converted to Ufixed type for type stability.
-# TODO check time difference against general function 
-function gapfraction{T<:FixedPointNumbers.UFixed}(pixs::AbstractArray{T}, thresh)
-    threshT = convert(T, thresh)
-    gapfrsum = zero(Int)        
-    for pix in pixs
-        gapfrsum += pix.i > threshT.i
-    end
-    return(gapfrsum / length(pixs))
-end
-
 function loggapfraction(pixs, thresh)
     gf = gapfraction(pixs, thresh)
     gf == zero(gf) && return(log(1/length(pixs)))
@@ -39,14 +27,14 @@ end
 function weightedrings(polim::PolarImage, θ1::Real, θ2::Real, N::Integer)
     
     # create edges for θ rings with similar number of pixels each
-    θedges = map(polim.cl.fρθ, sqrt(linspace(polim.cl.fθρ(θ1)^2, 
+    θedges = map(polim.cl.fρθ, sqrt.(linspace(polim.cl.fθρ(θ1)^2, 
                                              polim.cl.fθρ(θ2)^2, N+1)))
     #fix possible floating point roundoff errors
     θedges[1] = max(θedges[1], θ1) 
     θedges[end] = min(θedges[end], θ2)
     
     # weighted average midpoints
-    θdouble = map(polim.cl.fρθ, sqrt(linspace(polim.cl.fθρ(θ1)^2, (polim.cl.fθρ(θ2))^2, 2N+1)))
+    θdouble = map(polim.cl.fρθ, sqrt.(linspace(polim.cl.fθρ(θ1)^2, (polim.cl.fθρ(θ2))^2, 2N+1)))
     θmid = θdouble[2:2:2N]
     
     return θedges, θmid

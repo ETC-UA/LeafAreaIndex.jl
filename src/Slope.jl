@@ -1,5 +1,5 @@
 
-abstract SlopeInfo
+abstract type SlopeInfo end
 
 immutable NoSlope <: SlopeInfo; end
 

@@ -2,7 +2,7 @@
 const APPROX_N=100
 
 # Type to contain an image and its polar transform
-type PolarImage{T, A <: AbstractMatrix}
+struct PolarImage{T, A <: AbstractMatrix}
     cl::CameraLens
     slope::SlopeInfo
     img::A              #original image
@@ -61,16 +61,25 @@ function approx_fρ²θ(cl::CameraLens; N=APPROX_N)
 
     ρ² = linspace(0, cl.ρ²sort[end], N)
     A = [ρ²ᵢ^p for ρ²ᵢ in ρ², p in [0.5, 1, 1.5]]
-    a,b,c = A \ map(cl.fρθ, sqrt(ρ²))
+    a,b,c = A \ map(cl.fρθ, sqrt.(ρ²))
     
-    f = FastAnonymous.@anon x -> (a*sqrt(x) + b*x + c*x^1.5)
-    return f
+    return x -> (a*sqrt(x) + b*x + c*x^1.5)
 end
 
+"Return pixels between two given zenith angles."
+function pixels(polim::PolarImage, θ1::Real, θ2::Real)
+    checkθ1θ2(θ1,θ2)
+    ind_first = searchsortedfirst(polim.cl.ρ²sort, polim.cl.fθρ(θ1)^2)
+    ind_last = searchsortedlast(polim.cl.ρ²sort, polim.cl.fθρ(θ2)^2) 
+    view(polim.imgsort, ind_first:ind_last)
+end
+pixels(polim::PolarImage) = pixels(polim, 0, π/2)
 
 slope(polim::PolarImage) = slope(polim.slope)
 aspect(polim::PolarImage) = aspect(polim.slope)
 has_slope(polim::PolarImage) = isa(polim.slope, Slope)
+
+
 
 # generic constructor for testing
 genPolarImage(M) = PolarImage(M, gencalibrate(M))
@@ -83,5 +92,3 @@ function Base.show(io::IO, polim::PolarImage)
     with_out = ifelse(isa(polim.slope, NoSlope), "without", "with")
     print(io::IO, "PolarImage $with_out slope")
 end
-Base.writemime(io::IO, ::MIME"text/plain", cl::CameraLens) = show(io, cl)
-

@@ -12,7 +12,7 @@ function langxiang(polim::PolarImage, sl::NoSlope, thresh, θ1::Real, θ2::Real,
     segm = segments(polim, θ1, θ2, nϕ)
     
     segm_gapfr = Float64[gapfraction(segm[i], thresh) for i in 1:length(segm)]
-    clump_LX = log(mean(segm_gapfr)) / mean(log(segm_gapfr))
+    clump_LX = log.(mean(segm_gapfr)) / mean(log.(segm_gapfr))
 end
 
 # With Slope
@@ -47,7 +47,7 @@ function langxiang(polim::PolarImage, sl::Slope, thresh, θ1::Real, θ2::Real,
             T[i] = 1 / length(segmvec[i])
         end
     end
-    clump_LX = log(mean(T)) / mean(log(T))
+    clump_LX = log.(mean(T)) / mean(log.(T))
 end
 
 

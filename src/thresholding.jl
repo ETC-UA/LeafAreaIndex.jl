@@ -1,7 +1,7 @@
 const RIDLER_CALVARD_MAX_ITER = 100
 const RIDLER_CALVARD_TOL = 1e-6
 
-abstract ThresholdMethod
+abstract type ThresholdMethod end
 type RidlerCalvard    <: ThresholdMethod end
 type EdgeDetection    <: ThresholdMethod end
 type MinimumThreshold <: ThresholdMethod end
@@ -111,19 +111,24 @@ end
 function threshold(gray::AbstractArray, ::EdgeDetection)
     # maximization so use negative sign
     res = Optim.optimize(x -> -edgefoptim(gray, x), 0.01, 0.99)
-    res.minimum
+    Optim.minimizer(res)
 end
 
 # Cut out box around fθρ(π/2) to reduce for polarimage argument
-"""Edge Detection method for automatic thresholding after Nobis & Hunziker, 2005.
+"""
+    threshold(polar_image, EdgeDetection())
+
+Edge Detection method for automatic thresholding after Nobis & Hunziker, 2005.
+
 It optimizes the threshold to find the maximum value of the contrast mean at edges.
-Method is slightly adapted from original by normalizing the contrast mean with the
+The method has been slightly adapted from the original by normalizing the contrast mean with the
 sqrt (because 2D) of edges count, to avoid spurious results with high threshold
-values and very little edges."""
+values and very little edges.
+"""
 function threshold(polim::PolarImage, ::EdgeDetection)
-    Rmax = ceil(Int, polim.cl.fθρ(π/2))
-    ci = polim.cl.ci
-    cj = polim.cl.cj
+    Rmax   = ceil(Int, polim.cl.fθρ(π/2))
+    ci     = polim.cl.ci
+    cj     = polim.cl.cj
     rowmin = max(1, ci - Rmax)
     rowmax = min(polim.cl.size1, ci + Rmax)
     colmin = max(1, cj - Rmax)

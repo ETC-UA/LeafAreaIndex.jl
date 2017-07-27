@@ -7,7 +7,7 @@ This is Camera + Lens dependent, but it's the same for each of its pictures,
 so ρ² and ϕ only need to be (pre)calculated per camera+lens once.
 We assume the lens has at least 180ᵒ field of view.
 """
-immutable CameraLens
+struct CameraLens
     size1::Int #number of rows of image = size(image, 1)
     size2::Int #number of columns of image = size(image, 2)
     ci::Int    #lens center is located at image[ci,cj]
@@ -25,7 +25,7 @@ immutable CameraLens
     ρ²unique_ind::Vector{UInt32}   #(start) indices of each unique ρ² for use in ρ²sort
 end
 
-"Auxiliary function to count the number of unique ρ² and their index for CameraLens."
+"Count the number of unique ρ² and their index for CameraLens."
 function count_unique(ρ²sort)
     @assert issorted(ρ²sort)
     ρ²unique = unique(ρ²sort)
@@ -61,8 +61,7 @@ function spiralindex(ind, ρmax, ρ²unique, ρ²unique_ind, ϕsort)
         singleρ² = ρ^2
         firstρ²ind = searchsortedfirst(ρ²unique, singleρ²)       
         ρ²startind = ρ²unique_ind[firstρ²ind]
-        ρ²spiralind = sortperm(ArrayViews.view(ϕsort, ind_prev:ρ²startind-1))
-        # TODO use @devec?
+        ρ²spiralind = sortperm(view(ϕsort, ind_prev:ρ²startind-1))
         spiralind[ind_prev:ρ²startind-1] = ind_prev - 1 + ρ²spiralind
         ind_prev = ρ²startind
     end
@@ -94,7 +93,7 @@ function check_calibration_inputs(size1, size2, ci::Int, cj::Int, fθρ::Functio
     all(diff(map(fρθ, linspace(0, pi/2, 100))) .> 0) || error("Incorrectly defined fρθ; fρθ not monotonic")
 
     for θ in linspace(0, pi/2, 100)
-        @test_approx_eq θ fρθ(fθρ(θ))
+        @assert θ ≈ fρθ(fθρ(θ))
     end
 
     return true
@@ -137,12 +136,12 @@ function CameraLens(size1::Int, size2::Int, ci::Int, cj::Int, fθρ::Function, f
     CameraLens(size1,size2,ci,cj,fθρ,fρθ,ind,spiral_ind,ρ²sort,ϕsort,ρ²unique,ρ²unique_ind)
 end
 
+
 function Base.show(io::IO, cl::CameraLens)
     print(io::IO, "CameraLens object with:\n")
     print(io::IO, "\t size: (", cl.size1,", ",cl.size2,")\n")
     print(io::IO, "\t center i,j: ",cl.ci, ", ",cl.cj,"\n")
 end
-Base.writemime(io::IO, ::MIME"text/plain", cl::CameraLens) = show(io, cl)
 
 Base.size(cl::CameraLens) = (cl.size1, cl.size2)
 Base.length(cl::CameraLens) = prod(size(cl))
