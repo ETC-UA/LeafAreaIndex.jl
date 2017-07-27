@@ -1,18 +1,16 @@
 # LAI
 
-For an introduction on LAI we refer to [Weiss et al. 2004][Weiss2004] and [Thimonier et al 2010][Thimonier2010].
+For an introduction on LAI we refer to Weiss et al., 2004[^1] and Thimonier et al., 2010[^2].
 
 ## Quick Introduction
 
 Install the package through
     
-    :::julia
     Pkg.clone("https://github.com/ETC-UA/LeafAreaIndex.jl")
 
 You construct a PolarImage from a Calibration type and an Image (or in general, a Matrix). The calibration requires the image size, the coordinates of the lens center and the (inverse) projection function. 
 (The projection function maps polar distance ρ [in pixels] on the image to the zenith angle θ [in radians] of the scene and is usually not linear.)
 
-    :::julia
     using Images
     img = imread("image.dng")
     imgblue = blue(img) #take the blue channel
@@ -22,14 +20,12 @@ You construct a PolarImage from a Calibration type and an Image (or in general, 
 
 The first step is automatical thresholding with the default method Ridler Calvard:
 
-    :::julia
     thresh = threshold(polarimg)
 
 The clumping factor can be estimated with the method of Lang Xiang with 45ᵒ segments between view angles θ1 and θ2 using `langxiang45(polarimg, thresh, θ1, θ2)`. Similarly `chencihlar(polarimg, thresh, θ1, θ2)` for the Chen Chilar method.
 
 There are two methods to estimate LAI assuming an ellipsoidal leave angle distribution, both also estimating the Average Leaf Inclination Angle (ALIA). The first one uses a Lookup Table (LUT) and the second one an optimization method.
 
-    :::julia
     LAI1 = ellips_LUT(polarimg, thresh)
     LAI2 = ellips_opt(polarimg, thresh)
 
@@ -37,7 +33,6 @@ There are two methods to estimate LAI assuming an ellipsoidal leave angle distri
 
 For images taken (vertically upwards) on a domain with slope of eg 10ᵒ and downward to the East, you must include this in your PolarImage.
 
-    :::julia
     myslope = Slope(10/180*pi, pi/2)
     polarimg = PolarImage(img, mycameralens, myslope)
 
@@ -57,7 +52,5 @@ You can also construct an *iterator* to access a specific zenith range. It will 
 
 In case of problems or suggestion, don't hesitate to submit an issue through the [issue tracker](https://github.com/ETC-UA/LeafAreaIndex.jl/issues) or code suggestions through a [pull request](https://github.com/ETC-UA/LeafAreaIndex.jl/pulls).
 
-
-
-[Weiss2004]: http://www.researchgate.net/profile/Inge_Jonckheere/publication/222931516_Review_of_methods_for_in_situ_leaf_area_index_(LAI)_determination_Part_II._Estimation_of_LAI_errors_and_sampling/links/09e4150cefe5a4fea5000000.pdf
-[Thimonier2010]: http://www.schleppi.ch/patrick/publi/pdf/atal10b.pdf
+[^1]: [Weiss et al 2004](http://www.researchgate.net/profile/Inge_Jonckheere/publication/222931516_Review_of_methods_for_in_situ_leaf_area_index_(LAI)_determination_Part_II._Estimation_of_LAI_errors_and_sampling/links/09e4150cefe5a4fea5000000.pdf)
+[^2]: [Thimonier et al 2010](http://www.schleppi.ch/patrick/publi/pdf/atal10b.pdf)
