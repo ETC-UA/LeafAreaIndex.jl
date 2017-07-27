@@ -1,6 +1,7 @@
 julia 0.6
 Optim
-Plots
-Graphics
 FileIO
 Netpbm
+Plots
+DataFrames
+Graphics

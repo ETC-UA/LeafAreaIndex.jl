@@ -23,12 +23,13 @@ function loggapfraction(pixs, thresh)
     log(gf)
 end
 
-"Auxilary function to create rings with similar amount of pixels per ring."
+"Create rings with similar amount of pixels per ring. Outputs the edges and weigted midpoints of the rings."
 function weightedrings(polim::PolarImage, θ1::Real, θ2::Real, N::Integer)
     
     # create edges for θ rings with similar number of pixels each
     θedges = map(polim.cl.fρθ, sqrt.(linspace(polim.cl.fθρ(θ1)^2, 
                                              polim.cl.fθρ(θ2)^2, N+1)))
+                                             
     #fix possible floating point roundoff errors
     θedges[1] = max(θedges[1], θ1) 
     θedges[end] = min(θedges[end], θ2)
