@@ -21,14 +21,15 @@ The Chen Cihlar method was originally proposed not for hemisperical pictures but
 The principle for the Chen Cihlar method is to remove large gaps from the measured (cumulative) gap size distribution ``F_m`` to get a reduced distribution ``F_{mr}`` until it corresponds to the theoretical (cumulative) gap size distribution ``F`` from a random canopy.
 
 The theoretical cumulative gap size distribution ``F`` depends on the projected LAI ``L_p`` and the projected characteristic leaf width ``W_p``:
+
 ```math
 F(\lambda, \theta) = \big[ 1+L_p(\theta)\lambda/W_p(\theta) \big] \exp\Big(-L_p(\theta) -L_p(\theta)\lambda/W_p(\theta) \Big)
 ```
 
-where ``\lambda`` represents the gap size. 
+where ``\lambda`` represents the gap size.
 
+``W_p`` can be estimated from the probe probabilty ``P``, i.e. "the probability that a probe of length ``l`` falls completely within a sunfleck on the forect floor" ([Leblanc et al. 2005](http://digitalcommons.unl.edu/cgi/viewcontent.cgi?article=1005&context=nasapub)):
 
-``W_p`` can be estimated from the probe probabilty ``P``, i.e. "the probability that a probe of length ``l`` falls completely within a sunfleck on the forect floor"([Leblanc et al. 2005][Leblanc2005]):
 ```math
 W_p = - \frac{\ln P(0,\theta)}{\big|\partial \ln P(l, \theta) / \partial l\big|_{l=0}}
 ```
@@ -45,6 +46,3 @@ The clumping correction is then defined as
 ```math
 \Omega_{CC} = \frac{\ln F_m}{\ln F_{mr}}\frac{1-F_{mr}}{1-F_m}
 ```
-
-
-[Leblanc2005]: http://digitalcommons.unl.edu/cgi/viewcontent.cgi?article=1005&context=nasapub

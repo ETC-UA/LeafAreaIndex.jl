@@ -18,3 +18,11 @@ makedocs(
     # Use clean URLs, unless built as a "local" build
     html_prettyurls = false#!("local" in ARGS)
 )
+deploydocs(
+    #root   = Pkg.dir("LeafAreaIndex","docs"),
+    repo   = "github.com/ETC-UA/LeafAreaIndex.jl.git",
+    latest = "julia6",
+    julia  = "0.6", 
+    deps   = nothing, 
+    make   = nothing
+)
