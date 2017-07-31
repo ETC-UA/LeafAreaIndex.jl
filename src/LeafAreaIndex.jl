@@ -4,6 +4,11 @@ module LeafAreaIndex
 
 import Optim, FileIO, Netpbm
 
+# in calibration.jl
+using Graphics: Point, norm
+using Optim: optimize
+using DataFrames
+
 export rawblueread, CameraLens, PolarImage, Slope, 
     pixels, gapfraction, contactfreq,
     threshold, EdgeDetection, MinimumThreshold, RidlerCalvard,

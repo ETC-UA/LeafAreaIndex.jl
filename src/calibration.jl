@@ -1,7 +1,4 @@
-using Graphics: Point, norm
 
-using Optim: optimize
-using DataFrames
 
 
 # some auxilary functions
