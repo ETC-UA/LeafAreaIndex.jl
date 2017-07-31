@@ -1,6 +1,4 @@
 
-
-
 # some auxilary functions
 dist(p::Point, q::Point) = norm(p-q)
 angle(p::Point, q::Point) = atan2(p.y - q.y, q.x - p.x)

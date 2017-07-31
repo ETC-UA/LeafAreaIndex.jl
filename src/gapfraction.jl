@@ -96,7 +96,7 @@ function contactfreqs(polim::PolarImage, sl::Slope, θ1::Real, θ2::Real,
           ρ²indend =  searchsortedlast(polim.cl.ρ²unique, polim.cl.fθρ(θedges[i+1])^2) 
         indstart = polim.cl.ρ²unique_ind[ρ²indstart]
           indend = polim.cl.ρ²unique_ind[ρ²indend]
-        τs = ArrayViews.view(polim.τsort, indstart:indend)
+        τs = view(polim.τsort, indstart:indend)
         
         K[i] = contactfreqs_iterate(pixs, τs, thresh, θmid[i]; 
                                     Nϕ=Nϕ, max_iter=max_iter, tol=tol)

@@ -8,81 +8,66 @@ so ρ² and ϕ only need to be (pre)calculated per camera+lens once.
 We assume the lens has at least 180ᵒ field of view.
 """
 struct CameraLens
-    size1::Int #number of rows of image = size(image, 1)
-    size2::Int #number of columns of image = size(image, 2)
-    ci::Int    #lens center is located at image[ci,cj]
-    cj::Int
-    fθρ::Function           #projection function θ → ρ (θ in [0,π/2], ρ in pixels)
-    fρθ::Function           #inverse projection function ρ → θ
-    #ρ²::Array{UInt32,2}     #squared distance to center for each point
-    #ϕ::Array{Float64,2}     #azimuth angle [-π,π]
-    sort_ind::Vector{Int}   #indices to sort according to ρ², then ϕ
-    # Note UInt32 is sufficient to store ρ².
-    spiral_ind::Vector{Int} #indices to sort according to spiral: ρ² per pixel width, then ϕ
-    ρ²sort::Vector{UInt32}  #ρ² sorted by sort_ind
-    ϕsort::Vector{Float64}  #ϕ sorted by sort_ind
-    ρ²unique::Vector{UInt32}#unique elements of ρ²
-    ρ²unique_ind::Vector{UInt32}   #(start) indices of each unique ρ² for use in ρ²sort
+    height  :: Int # number of rows of image = size(image, 1)
+    width :: Int # number of columns of image = size(image, 2)
+    ci :: Int    # lens center is located at image[ci,cj]
+    cj :: Int
+    fθρ :: Function           # projection function θ → ρ (θ in [0,π/2], ρ in pixels)
+    fρθ :: Function           # inverse projection function ρ → θ
+    sort_ind :: Vector{Int}   # indices to sort according to ρ², then ϕ
+    # Note UInt32 is sufficie nt to store ρ².
+    ρ²sort :: Vector{UInt32}  # ρ² sorted by sort_ind
+    ϕsort  :: Vector{Float64} # ϕ  sorted by sort_ind
+    spiral_ind :: Vector{Int} # indices to sort according to spiral: first per pixel ρ², then per ϕ
 end
+ 
+"CameraLens constructor function."
+function CameraLens(height::Int, width::Int, ci::Int, cj::Int, fθρ::Function, fρθ::Function)
 
-"Count the number of unique ρ² and their index for CameraLens."
-function count_unique(ρ²sort)
-    @assert issorted(ρ²sort)
-    ρ²unique = unique(ρ²sort)
-    ρ²uniquecounts = zeros(UInt32, length(ρ²unique)-1)
-    ρ²uniquecounts[1] = 1
-    prevρ² = ρ²sort[1]
-    cnt = 1
-    ind = 1
-    for i = 2:length(ρ²sort)
-        ρ² = ρ²sort[i]
-        if ρ² == prevρ²
-            cnt += 1
-        else
-            ρ²uniquecounts[ind] = cnt
-            ind += 1
-            cnt = 1
+    check_calibration_inputs(height, width, ci, cj, fθρ, fρθ)
+
+    ρ² = zeros(UInt32, height, width)
+    ϕ = zeros(Float64, height, width)
+    for j = 1:width
+        @fastmath @inbounds @simd for i = 1:height
+            x = j - cj
+            y = ci - i
+            ρ²[i,j] = x^2 + y^2
+            ϕ[i,j] = atan2(y, x)
         end
-        prevρ² = ρ²
     end
-    ρ²unique, unshift!(cumsum(ρ²uniquecounts) + 1, 1)
+    ϕ[ci, cj] = 0.0 #fix ϕ at center
+
+    # sort by increasing ρ², then by increasing ϕ (ϕ ∈ [-π/2, π/2])
+    ind = sortperm(reshape(ρ² + ϕ / 10, length(ρ²))) #this takes most time
+    ρ²sort = ρ²[ind]
+    ρmax = round(Int, fθρ(π/2))
+    ρ²indmax = searchsortedlast(ρ²sort, ρmax^2)
+    ρ²sort = ρ²sort[1:ρ²indmax]
+    ind = ind[1:ρ²indmax]
+    ϕsort = ϕ[ind]
+
+    spiral_ind = spiralindex(ind, ρmax, ρ²sort, ϕsort)
+
+    CameraLens(height,width,ci,cj,fθρ,fρθ,ind,ρ²sort,ϕsort,spiral_ind)
 end
 
-"""
-Spiral indices: combine ρ² for a ring of single pixel width and then sort on ϕ.
-Assumes implicitely an offset of -π, where spiral jumps to next ring.
-Used for gap lengths in Chen Chilar clumping.
-"""
-function spiralindex(ind, ρmax, ρ²unique, ρ²unique_ind, ϕsort)
-    spiralind = similar(ind)
-    ρ²spiralind = Int[] #temp array for ring of single pixel ρ² indices
-    ind_prev = 1    
-    for ρ in 1:ρmax
-        singleρ² = ρ^2
-        firstρ²ind = searchsortedfirst(ρ²unique, singleρ²)       
-        ρ²startind = ρ²unique_ind[firstρ²ind]
-        ρ²spiralind = sortperm(view(ϕsort, ind_prev:ρ²startind-1))
-        spiralind[ind_prev:ρ²startind-1] = ind_prev - 1 + ρ²spiralind
-        ind_prev = ρ²startind
-    end
-    # last circle of spiral
-    ρ²spiralind = sortperm(ϕsort[ind_prev:end])
-    spiralind[ind_prev:end] = ind_prev - 1 + ρ²spiralind
-    # finally the spiral_ind is to be used on original image, not on ϕsort (or ρsort)
-    spiral_ind = ind[spiralind]
+function firstlastind(cl::CameraLens, θ1::Real, θ2::Real)
+    checkθ1θ2(θ1,θ2)
+    ind_first = searchsortedfirst(cl.ρ²sort, cl.fθρ(θ1)^2)
+    ind_last  = searchsortedlast( cl.ρ²sort, cl.fθρ(θ2)^2)
+    ind_first, ind_last
 end
 
-using Base.Test
-function check_calibration_inputs(size1, size2, ci::Int, cj::Int, fθρ::Function,
-                                  fρθ::Function)
+function check_calibration_inputs(height, width, ci::Int, cj::Int, fθρ::Function, fρθ::Function)
+    @assert height <= width
+    @assert width > 0 && height > 0 && ci > 0 && cj > 0
 
-    @assert size1 > 0 && size2 > 0 && ci > 0 && cj > 0
+    abs(ci/height - 0.5) > 0.1 && warn("cj ($ci) more than 10% away from center ($(height/2)).")
+    abs(cj/width  - 0.5) > 0.1 && warn("ci ($cj) more than 10% away from center ($(width/2).")
 
-    abs(ci/size1 - 0.5) > 0.1 && warn("ci ($ci) more than 10% away from center ($(size1/2).")
-    abs(cj/size2 - 0.5) > 0.1 && warn("cj ($cj) more than 10% away from center ($(size1/2)).")
-
-    abs(ci/size1 - 0.5) > 0.2 && error("ci ($ci) more than 20% away from center ($(size1/2).")
-    abs(cj/size2 - 0.5) > 0.2 && error("cj ($cj) more than 20% away from center ($(size1/2)).")
+    abs(ci/height - 0.5) > 0.2 && error("ci ($ci) more than 20% away from center ($(heigth/2).")
+    abs(cj/width - 0.5) > 0.2 && error("cj ($cj) more than 20% away from center ($(width/2)).")
 
     @assert fθρ(0.0) >= 0
     @assert fθρ(pi/2) >= 2 
@@ -95,63 +80,48 @@ function check_calibration_inputs(size1, size2, ci::Int, cj::Int, fθρ::Functio
     for θ in linspace(0, pi/2, 100)
         @assert θ ≈ fρθ(fθρ(θ))
     end
-
-    return true
 end
 
-"CameraLens constructor function."
-function CameraLens(size1::Int, size2::Int, ci::Int, cj::Int, fθρ::Function, fρθ::Function)
-
-    check_calibration_inputs(size1, size2, ci, cj, fθρ, fρθ)
-
-    ρ² = zeros(UInt32, size1, size2)
-    ϕ = zeros(Float64, size1, size2)
-    for j = 1:size2
-        @fastmath @inbounds @simd for i = 1:size1
-            x = j - cj
-            y = ci - i
-            ρ²[i,j] = x^2 + y^2
-            ϕ[i,j] = atan2(y, x)
-        end
+"""
+Spiral indices: combine ρ² for a ring of single pixel width and then sort on ϕ.
+Assumes implicitely an offset of -π, where spiral jumps to next ring.
+Used for gap lengths in Chen Chilar clumping.
+"""
+function spiralindex(ind, ρmax, ρ²sort, ϕsort)
+    spiralind = similar(ind)
+    ρ²spiralind = Int[] #temp array for ring of single pixel ρ² indices
+    
+    # loop per pixel to get spirals of 1 pixel width
+    ind_prev = 1   
+    for ρ in 1:ρmax
+        ρ²startind = searchsortedfirst(ρ²sort, ρ^2)
+        
+        ρ²spiralind = sortperm(view(ϕsort, ind_prev:ρ²startind-1))
+        spiralind[ind_prev:ρ²startind-1] = ind_prev - 1 + ρ²spiralind
+        ind_prev = ρ²startind
     end
-    ϕ[ci, cj] = 0.0 #fix ϕ at center
-
-    # sort by increasing ρ², then by increasing ϕ
-    ind = sortperm(reshape(ρ² + ϕ / 10, length(ρ²))) #this takes most time
-    ρ²sort = ρ²[ind]
-    ρmax = round(Int, fθρ(π/2))
-    ρ²indmax = searchsortedlast(ρ²sort, ρmax^2)
-    ρ²sort = ρ²sort[1:ρ²indmax]
-    ind = ind[1:ρ²indmax]
-    ϕsort = ϕ[ind]
-
-    # For fast indexing in ϕsort and ρ²sort by increasing ρ² we calculate the
-    # indices where each unique ρ² starts. This is uesed by PolarRings to
-    # iterate over rings with increasing ρ² values.
-    ρ²unique, ρ²unique_ind =  count_unique(ρ²sort)
-
-    # Calculate the spiral index
-    spiral_ind = spiralindex(ind, ρmax, ρ²unique, ρ²unique_ind, ϕsort)
-
-    CameraLens(size1,size2,ci,cj,fθρ,fρθ,ind,spiral_ind,ρ²sort,ϕsort,ρ²unique,ρ²unique_ind)
+    # last circle of spiral
+    ρ²spiralind = sortperm(ϕsort[ind_prev:end])
+    spiralind[ind_prev:end] = ind_prev - 1 + ρ²spiralind
+    # finally the spiral_ind is to be used on original image, not on ϕsort (or ρsort)
+    spiral_ind = ind[spiralind]
 end
-
 
 function Base.show(io::IO, cl::CameraLens)
-    print(io::IO, "CameraLens object with:\n")
-    print(io::IO, "\t size: (", cl.size1,", ",cl.size2,")\n")
-    print(io::IO, "\t center i,j: ",cl.ci, ", ",cl.cj,"\n")
+    println(io::IO, "CameraLens object with:")
+    println(io::IO, "\t size:", size(cl))
+    println(io::IO, "\t center i,j: ",cl.ci, ", ", cl.cj)
 end
 
-Base.size(cl::CameraLens) = (cl.size1, cl.size2)
+Base.size(cl::CameraLens) = (cl.height, cl.width)
 Base.length(cl::CameraLens) = prod(size(cl))
 
 "Generic constructor for testing"
 function CameraLens(M::AbstractMatrix)
-    size1, size2 = size(M)
-    ci, cj = ceil(Int, size1/2), ceil(Int, size2/2) #center point
-    ρmax = min(ci, cj, size2-ci, size2-cj)
+    height, width = size(M)
+    ci, cj = ceil(Int, height/2), ceil(Int, width/2) #center point
+    ρmax = min(ci, cj, width-ci, height-cj)
     fθρ(θ) = θ / (π/2) * ρmax
     fρθ(ρ) = ρ / ρmax * π/2
-    CameraLens(size1, size2, ci, cj, fθρ, fρθ)
+    CameraLens(height, width, ci, cj, fθρ, fρθ)
 end

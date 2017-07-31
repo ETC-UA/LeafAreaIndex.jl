@@ -1,4 +1,4 @@
-__precompile__()
+#__precompile__()
 
 module LeafAreaIndex
 
@@ -9,7 +9,7 @@ using Graphics: Point, norm
 using Optim: optimize
 using DataFrames
 
-export rawblueread, CameraLens, PolarImage, Slope, 
+export rawblueread, CameraLens, PolarImage, Slope, Mask,
     pixels, gapfraction, contactfreq,
     threshold, EdgeDetection, MinimumThreshold, RidlerCalvard,
     inverse, Zenith57, Miller, Lang, EllipsLUT, EllipsOpt,
@@ -51,9 +51,9 @@ end
 
 include("CameraLens.jl")
 include("Slope.jl")
+include("Mask.jl")
 include("PolarImage.jl")
-include("PolarRings.jl")
-include("PolarSegments.jl")
+#include("PolarRings.jl")
 include("thresholding.jl")
 include("gapfraction.jl")
 include("inversion.jl")

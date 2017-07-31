@@ -1,20 +1,26 @@
 ## PolarRings ##
 
+# ONLY USED WITH MILLER INVERSION
+
 # We create an extra type PolarRings to iterate over pixels with increasing ρ.
 # Each iteration outputs a tuple (ρ²,ϕ,pixels::Vector{eltype(polim.data)})
-type PolarRings{T,A}
-    polim::PolarImage{T,A}
+type PolarRings{T,A,M}
+    polim::PolarImage{T,A,M}
     ind_first::Int
     ind_last::Int
     ind::Vector{Int}
 end 
 
-function PolarRings(polim::PolarImage, θ1::Real, θ2::Real)
+function PolarRings(polim::PolarImage{T,A,NoMask}, θ1::Real, θ2::Real) where T where A
     checkθ1θ2(θ1,θ2)
     ind_first = searchsortedfirst(polim.cl.ρ²unique, polim.cl.fθρ(θ1)^2) 
     ind_last = searchsortedlast(polim.cl.ρ²unique, polim.cl.fθρ(θ2)^2)    
     ind = vcat(polim.cl.ρ²unique_ind, length(polim.cl.sort_ind)) #add end index
     PolarRings{eltype(polim.img),typeof(polim.img)}(polim, ind_first, ind_last, ind)
+end
+
+function PolarRings(polim::PolarImage{T,A,Mask}, θ1::Real, θ2::Real) where T where A
+    error("Miller method not implemented for masked images.")
 end
 
 # Defining start, done and next methods will make PolarRings an iterator
