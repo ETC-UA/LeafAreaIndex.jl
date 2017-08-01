@@ -26,15 +26,15 @@ function PolarImage(img::AbstractMatrix, cl::CameraLens, mask::Mask)
     imgspiral = img[mask.mask_spiral_ind]
     PolarImage{eltype(img), typeof(img), NoSlope, Mask}(cl, NoSlope(), mask, imgsort, imgspiral)
 end
-ϕsort(polim::PolarImage{T,<:AbstractMatrix,<:SlopeInfo, NoMask}) where T = polim.cl.ϕsort
-ϕsort(polim::PolarImage{T,<:AbstractMatrix,<:SlopeInfo, Mask})   where T = polim.mask.mask_ϕsort
+getϕsort(polim::PolarImage{T,<:AbstractMatrix,<:SlopeInfo, NoMask}) where T = polim.cl.ϕsort
+getϕsort(polim::PolarImage{T,<:AbstractMatrix,<:SlopeInfo, Mask})   where T = polim.mask.mask_ϕsort
 
 function firstlastind(polim::PolarImage{T,<:AbstractMatrix, NoSlope, NoMask}, θ1::Real, θ2::Real) where T
     firstlastind(polim.cl, θ1, θ2)
 end
 function firstlastind(polim::PolarImage{T,<:AbstractMatrix, Slope, NoMask}, θ1::Real, θ2::Real) where T
     α, ε = params(polim.slope)
-    θmax = minimum(θ2, pi/2 - α)
+    θmax = min(θ2, pi/2 - α)
     firstlastind(polim.cl, θ1, θmax)
 end
 function firstlastind(polim::PolarImage{T,<:AbstractMatrix, NoSlope, Mask}, θ1::Real, θ2::Real) where T
@@ -57,7 +57,7 @@ function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
     ind_first, ind_last = firstlastind(polim, θ1, θ2)
     segmvec = [eltype(polim)[] for i = 1:n]
     imgsort = polim.imgsort
-    ϕs = ϕsort(polim)
+    ϕsort = getϕsort(polim)
 
     if isa(polim.mask, NoMask)
         adj = n/2π    
@@ -81,7 +81,7 @@ function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
 end
 
 Base.eltype{T}(polim::PolarImage{T}) = T
-Base.length(pm::PolarImage) = length(ϕsort(pm))
+Base.length(pm::PolarImage) = length(getϕsort(pm))
 Base.size(pm::PolarImage) = size(pm.img)
 
 function Base.show(io::IO, polim::PolarImage)

@@ -35,12 +35,12 @@ function Slope(cl::CameraLens, sp::SlopeParams)
         ϕ = τsort[i]
         τsort[i] = acos(cos(θ)*cos(α) + sin(θ)*cos(ϵ-ϕ)*sin(α))
     end
-    τsort
+    Slope(sp, τsort)
 end
 Slope(cl::CameraLens, α::Real, ϵ::Real) = Slope(cl, SlopeParams(α, ϵ))
 
 function Base.show(io::IO, sl::Slope) 
-    α, ϵ = params(sp)
+    α, ϵ = params(sl)
     println("Slope with ground inclination", α, " for aspect direction ", ϵ)
 end
 

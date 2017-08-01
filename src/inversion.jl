@@ -57,15 +57,22 @@ end
 Because the logarithm of the gap fraction is calculated, there's a delicate trade off
 between more rings for more algorithmic accuracy and more pixels per ring 
 (i.e. less rings) for more accurate log gap fraction per ring."
-function Nrings_def(polim::PolarImage)
+function Nrings_def(polim::PolarImage)::Int
     N = ceil(Int, polim.cl.fθρ(pi/2) / MILLER_GROUPS)
     if isa(polim.slope, NoSlope)
         return N
     else
-        return max(NRINGS_MIN_SLOPE, N / AZIMUTH_GROUPS)
+        return max(NRINGS_MIN_SLOPE, ceil(Int, N / AZIMUTH_GROUPS))
     end
 end
-
+function maxviewangle(polim::PolarImage, θmax=θMAX)
+    if isa(polim.slope, Slope)
+        α, ε = params(polim.slope)
+        return min(θmax, pi/2 - α)
+    else
+        return θmax
+    end
+end
 
 ## Constant angle
 ## --------------
@@ -236,7 +243,7 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
             lower = [0.1, 0.2]
             upper = [pi/2 - 0.1, 9]            
             res = Optim.optimize(fitfun, initial, lower, upper, Optim.Fminbox{Optim.LBFGS}())
-            ALIA, LAI = Optim.minimizer(res.minimum)
+            ALIA, LAI = Optim.minimizer(res)
             return LAI
         else
             throw(y)
@@ -246,7 +253,7 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
 end
 
 function inverse(polim::PolarImage, thresh, ::EllipsOpt;                     
-                    Nrings = Nrings_def(polim), θmax = θMAX)
+                    Nrings = Nrings_def(polim), θmax = maxviewangle(polim))
     
     θedges, θmid, K = contactfreqs(polim, 0.0, θmax, Nrings, thresh)
     # Find inital value for LAI for optimization

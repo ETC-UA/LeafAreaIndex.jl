@@ -53,6 +53,6 @@ function Mask(cl::CameraLens, θ::Real, ϕmin::Real, ϕmax::Real)
 end
 
 function Base.show(io::IO, mask::Mask) 
-    θmask, ϕmin, ϕmax = params(mp)
+    θmask, ϕmin, ϕmax = params(mask)
     println("Mask for θ >", θmask, " and ϕ in [", ϕmin, ",", ϕmax,"].")
 end

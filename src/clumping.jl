@@ -16,23 +16,17 @@ function langxiang(polim::PolarImage, sl::NoSlope, thresh, θ1::Real, θ2::Real,
 end
 
 # With Slope
-function langxiang(polim::PolarImage, sl::Slope, thresh, θ1::Real, θ2::Real, 
-                   nϕ::Integer)
-    checkθ1θ2(θ1,θ2)
+function langxiang(polim::PolarImage, sl::Slope, thresh, θ1::Real, θ2::Real, nϕ::Integer)
     
-    ρ²indstart = searchsortedfirst(polim.cl.ρ²unique, polim.cl.fθρ(θ1)^2) 
-      ρ²indend =  searchsortedlast(polim.cl.ρ²unique, polim.cl.fθρ(θ2)^2) 
-    indstart = polim.cl.ρ²unique_ind[ρ²indstart]
-      indend = polim.cl.ρ²unique_ind[ρ²indend]
-
+    # like `segments` but also with τsort
+    ind_first, ind_last = firstlastind(polim, θ1, θ2)
     segmvec = [eltype(polim)[] for i = 1:nϕ]
     τvec = [Float64[] for i = 1:nϕ]
-    
     imgsort = polim.imgsort
-    ϕsort = polim.cl.ϕsort
-    τsort = polim.τsort
+    ϕsort = getϕsort(polim)
+    τsort = polim.slope.τsort
     adj = nϕ/2π #adjustment to segment ϕsort
-    @inbounds for ind in indstart:indend
+    @inbounds for ind in ind_first:ind_last
         indn = ceil(Int, (ϕsort[ind] + pi) * adj)
         push!(segmvec[indn], imgsort[ind])
         push!(τvec[indn], τsort[ind])
@@ -40,8 +34,8 @@ function langxiang(polim::PolarImage, sl::Slope, thresh, θ1::Real, θ2::Real,
     
     # TODO use weighted average θ instead of simple average
     θ = (θ1 + θ2) / 2
-    K = [contactfreqs_iterate(segmvec[i], τvec[i],thresh, θ) for i = 1:nϕ]
-    T = exp( -K / cos(θ))
+    K = [contactfreqs_iterate(segmvec[i], τvec[i], thresh, θ) for i = 1:nϕ]
+    T = exp.( -K / cos(θ))
     for i = 1:nϕ
         if T[i] == 0.0            
             T[i] = 1 / length(segmvec[i])
@@ -49,8 +43,6 @@ function langxiang(polim::PolarImage, sl::Slope, thresh, θ1::Real, θ2::Real,
     end
     clump_LX = log.(mean(T)) / mean(log.(T))
 end
-
-
 
 function langxiang45(polim::PolarImage, thresh, θ1::Real, θ2::Real)
 	langxiang(polim, thresh, θ1, θ2, LANGXIANG)
