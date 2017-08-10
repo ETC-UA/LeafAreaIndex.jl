@@ -2,6 +2,6 @@ julia 0.6
 Optim
 FileIO
 Netpbm
-Plots
 DataFrames
 Graphics
+ColorTypes

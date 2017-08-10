@@ -23,6 +23,9 @@ const LUT_NMEDIAN = 25 # number of points to sample (median) LAI from Weiss 2004
 Better to use a simple method such as `zenith57` or `lang` for a realistic
 LAI starting point for keyword argument `LAI_init`."""
 const DEFAULT_LAI_INIT = 3.0
+# min LAI value for warning and box constrained optimization. Was 0.2 for upward LAI, but reduced to 0.05 for crops.
+const LAI_MIN = 0.05
+const LAI_MAX = 10.0
 
 abstract type InversionMethod end
 struct Zenith57    <: InversionMethod end
@@ -153,7 +156,7 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
                  LAI_init::Float64 = DEFAULT_LAI_INIT)
 
     LAI_init == DEFAULT_LAI_INIT && warn("Default value detected for `LAI_init`, it's better to use an estimate from `zenith57`.")
-    if !(0.2 < LAI_init < 9)
+    if !(LAI_MIN < LAI_init < LAI_MAX)
         warn("LAI starting point ($LAI_init) for optimization outside limits [0.2, 9] and will be reset.")
         LAI_init = DEFAULT_LAI_INIT # max(min(LAI_init, 9), 0.2)
     end
@@ -176,8 +179,8 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
         if isa(y, DomainError)
             # in case LsqFit.curve_fit does not converge and wanders out of the
             # parameter space, use box constrained optimization.
-            lower = [0.1, 0.2]
-            upper = [pi/2 - 0.1, 9]            
+            lower = [0.05, LAI_MIN]
+            upper = [pi/2 - 0.05, LAI_MAX]            
             res = optimize(fitfun, initial, lower, upper, Optim.Fminbox{Optim.LBFGS}())
             ALIA, LAI = minimizer(res)
             return LAI
@@ -211,7 +214,7 @@ end
 """Populates a Lookup Table (Weiss 2004) with random contact frequencies for a 
 range of ALIA and LAI values"""
 function populateLUT(θmid::Vector{Float64}; Nlut = LUT_POINTS)
-    LAI_max = 9.0
+    LAI_max = LAI_MAX
     LUT = Array(LUTel, Nlut)
     alia_max = pi/2 - .001 #against possible instability at π/2
     # As in paper [Weiss2004], populate LUT randomly.

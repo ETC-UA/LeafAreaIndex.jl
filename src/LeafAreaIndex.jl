@@ -3,7 +3,7 @@
 module LeafAreaIndex
 
 using Optim: optimize, minimizer
-import FileIO, Netpbm, Optim
+import FileIO, Netpbm, Optim, ColorTypes
 
 # in calibration.jl
 using Graphics: Point, norm
@@ -55,6 +55,7 @@ include("Mask.jl")
 include("PolarImage.jl")
 include("thresholding.jl")
 include("gapfraction.jl")
+include("crops.jl")
 include("inversion.jl")
 include("clumping.jl")
 include("ChenCihlar.jl")

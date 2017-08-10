@@ -5,7 +5,8 @@ const SLOPE_TOL = 1e-3
 
 
 #fallback
-gapfraction(pixs, thresh) = mean(pixs .> thresh)
+# WHY??
+#gapfraction(pixs, thresh) = mean(pixs .> thresh)
 
 #in general specialize on type of input array
 function gapfraction(pixs::AbstractArray, thresh)
@@ -26,20 +27,21 @@ end
 "Create rings with similar amount of pixels per ring. Outputs the edges and weigted midpoints of the rings."
 function weightedrings(polim::PolarImage, θ1::Real, θ2::Real, N::Integer)
     
+    fθρ = polim.cl.fθρ
     # create edges for θ rings with similar number of pixels each
-    θedges = map(polim.cl.fρθ, sqrt.(linspace(polim.cl.fθρ(θ1)^2, 
-                                             polim.cl.fθρ(θ2)^2, N+1)))
+    θedges = map(polim.cl.fρθ, sqrt.(linspace(fθρ(θ1)^2, fθρ(θ2)^2, N+1)))
                                              
     #fix possible floating point roundoff errors
     θedges[1] = max(θedges[1], θ1) 
     θedges[end] = min(θedges[end], θ2)
     
     # weighted average midpoints
-    θdouble = map(polim.cl.fρθ, sqrt.(linspace(polim.cl.fθρ(θ1)^2, (polim.cl.fθρ(θ2))^2, 2N+1)))
+    θdouble = map(polim.cl.fρθ, sqrt.(linspace(fθρ(θ1)^2, (fθρ(θ2))^2, 2N+1)))
     θmid = θdouble[2:2:2N]
     
     return θedges, θmid
 end
+
 weightedrings(polim::PolarImage, N::Integer) = weightedrings(polim, 0, pi/2, N)
 
 
