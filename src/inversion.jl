@@ -29,8 +29,6 @@ struct Zenith57    <: InversionMethod end
 struct Lang        <: InversionMethod end
 struct Miller      <: InversionMethod end
 struct MillerGroup <: InversionMethod end
-struct MillerNaive <: InversionMethod end
-struct MillerRings <: InversionMethod end
 struct EllipsOpt   <: InversionMethod end
 struct EllipsLUT   <: InversionMethod end
 
@@ -105,77 +103,16 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
     2 * sum(linreg(θmid, K))
 end
 
-
 ## Miller's formula
 ## ----------------
 
 """
-Miller's formula assumes a constant leaf angle. We implement 3 methods:
-* the naive one taking the integration for each unique ρ (`millersimple`)
-* grouping consecutive ρ distances (`millergroup`)
-* dividing the zenith range in N rings each with an equal number of pixels (default).
+Miller's formula assumes a constant leaf angle. We divide the zenith range 
+in N rings each with an equal number of pixels.
 """
 function inverse(polim::PolarImage, thresh, ::Miller; kwargs...) 
     inverse(polim, thresh, MillerRings(); kwargs...)
 end
-
-# """Because the naive method takes too little pixels per iteration, it distorts
-# the gap fraction. It is only given for reference."""
-# function inverse(polim::PolarImage, thresh, ::MillerNaive; θmax = θMAX, kwargs...)
-#     prevθ = 0.0
-#     s = 0.0
-#     #define inverse function for ρ²
-#     fρ²θ(ρ²) = polim.cl.fρθ(sqrt(ρ²))
-
-#     for (ρ², ϕ, px) in rings(polim, 0, θmax)
-#         θ = fρ²θ(ρ²)
-#         dθ = θ - prevθ
-#         # slope adjustment should be done per ϕ group, but because we only have
-#         # enough pixels per iteration for a single gap fraction, we take the
-#         # mean.
-#         adj = mean(slope_adj(polim.slope, θ, ϕ))
-#         logP = loggapfraction(px, thresh)
-#         s -= logP  * cos(θ) * adj * sin(θ) * dθ
-#         prevθ = θ
-#     end
-#     2s
-# end
-
-# """Group a number of consecutive ρ²-rings together and then integrate.
-#  dθ is incorrect for first and last, but the cos or sin will reduce these terms."""
-# function inverse(polim::PolarImage, thresh, ::MillerGroup;
-#                  group::Integer = MILLER_GROUPS, θmax::Real = θMAX, kwargs...)
-#     s = 0.0
-#     prevθ = 0.0
-#     count = 0
-#     pixs = eltype(polim)[]
-#     ϕs = Float64[] # keep ϕ for slope adjustment
-#     avgθ = StreamMean()
-#     # lens projection function from ρ² to θ
-#     fρ²θ(ρ²) = polim.cl.fρθ(sqrt(ρ²))
-#     for (ρ², ϕ, px) in rings(polim, 0., θmax)
-#         count += 1
-#         avgθ = update(avgθ, fρ²θ(ρ²))
-#         append!(ϕs, ϕ)
-#         append!(pixs, px)
-
-#         if count == group
-#             θ = mean(avgθ)
-#             dθ = θ - prevθ
-#             logP = loggapfraction(pixs, thresh)
-#             adj = mean(slope_adj(polim.slope, θ, ϕ))
-#             # TODO rewrite with contactfreqs?
-#             s -= logP * cos(θ) * adj * sin(θ) * dθ
-
-#             prevθ = θ
-#             count = 0
-#             empty!(pixs)
-#             empty!(ϕs)
-#             empty!(avgθ)
-#         end
-#     end
-#     return(2s)
-# end
 
 "Create a N rings and integrate. This is the most robust way for Miller's method."
 function inverse(polim::PolarImage, thresh, ::MillerRings;
@@ -188,7 +125,6 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
     dθ = diff(θedges)
     2 * sum(K .* sin(θmid) .* dθ)
 end
-
 
 ## Ellipsoidal
 ## -----------
@@ -224,8 +160,8 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
 
     # Find an initial value for ALIA
     fitfunalia(alia) = sum((model_ellips(θmid, [alia, LAI_init]) .- K).^2)
-    aliares = Optim.optimize(fitfunalia, 0.1, pi/2 - 0.1)
-    ALIA_init = Optim.minimizer(aliares)
+    aliares = optimize(fitfunalia, 0.1, pi/2 - 0.1)
+    ALIA_init = minimizer(aliares)
 
     # Optimize both ALIA and LAI at same time
     fitfun(x) = sum((K .- model_ellips(θmid, x)).^2)
@@ -233,8 +169,8 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
     fitdf = Optim.OnceDifferentiable(fitfun, initial; autodiff = :forward)
 
     try
-        res = Optim.optimize(fitdf, initial, Optim.LBFGS())
-        ALIA, LAI = Optim.minimizer(res)
+        res = optimize(fitdf, initial, Optim.LBFGS())
+        ALIA, LAI = minimizer(res)
         return LAI
     catch y
         if isa(y, DomainError)
@@ -242,8 +178,8 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
             # parameter space, use box constrained optimization.
             lower = [0.1, 0.2]
             upper = [pi/2 - 0.1, 9]            
-            res = Optim.optimize(fitfun, initial, lower, upper, Optim.Fminbox{Optim.LBFGS}())
-            ALIA, LAI = Optim.minimizer(res)
+            res = optimize(fitfun, initial, lower, upper, Optim.Fminbox{Optim.LBFGS}())
+            ALIA, LAI = minimizer(res)
             return LAI
         else
             throw(y)
@@ -266,7 +202,7 @@ end
 ## ---------------
 
 "Holds each element of the ellipsoidal Lookup Table method."
-immutable LUTel
+struct LUTel
     alia::Float64
     LAI::Float64
     modelled::Array{Float64}
