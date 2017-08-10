@@ -1,6 +1,7 @@
 abstract type MaskInfo end
 struct NoMask <: MaskInfo; end
 
+"Parameters for masking the area larger than θ and between azimuth angles ϕmin and ϕmax (in range -π..π)"
 struct MaskParams
     θ :: Float64
     ϕmin :: Float64

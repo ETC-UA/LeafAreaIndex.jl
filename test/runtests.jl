@@ -1,5 +1,6 @@
 using LeafAreaIndex
 using Base.Test
+import FixedPointNumbers
 
 ## CALIBRATION ##
 
@@ -22,7 +23,7 @@ test1cal = CameraLens(5, 5, 3, 3, θ -> 2 * Rmax1 * θ / π, ρ -> ρ * π/2 / R
 
 ## THRESHOLDING ##
 
-testimg2 = 0.5 * ones(FixedPointNumbers.UFixed{UInt16, 16}, 5, 5)
+testimg2 = 0.5 * ones(FixedPointNumbers.Normed{UInt16, 16}, 5, 5)
 testimg2[2:4, 2:4] = 0.7
 testimg2[3, 3] = 1
 @test threshold(testimg2, MinimumThreshold()) > 0.5

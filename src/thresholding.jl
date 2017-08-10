@@ -52,7 +52,7 @@ end
 # ---------------------
 
 "Specialized type for a fast circular queue."
-struct circqueue{T}
+mutable struct circqueue{T}
     array::Vector{T}
     len::Int
     index::Int #to be replaced
@@ -126,13 +126,14 @@ sqrt (because 2D) of edges count, to avoid spurious results with high threshold
 values and very little edges.
 """
 function threshold(polim::PolarImage, ::EdgeDetection)
+    rows, cols = size(polim)
     Rmax   = ceil(Int, polim.cl.fθρ(π/2))
     ci     = polim.cl.ci
     cj     = polim.cl.cj
     rowmin = max(1, ci - Rmax)
-    rowmax = min(polim.cl.size1, ci + Rmax)
+    rowmax = min(rows, ci + Rmax)
     colmin = max(1, cj - Rmax)
-    colmax = min(polim.cl.size2, cj + Rmax)
+    colmax = min(cols, cj + Rmax)
     threshold(polim.img[rowmin:rowmax, colmin:colmax], EdgeDetection())
 end
 
