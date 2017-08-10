@@ -28,7 +28,7 @@ abstract type InversionMethod end
 struct Zenith57    <: InversionMethod end
 struct Lang        <: InversionMethod end
 struct Miller      <: InversionMethod end
-struct MillerGroup <: InversionMethod end
+struct MillerRings <: InversionMethod end
 struct EllipsOpt   <: InversionMethod end
 struct EllipsLUT   <: InversionMethod end
 
