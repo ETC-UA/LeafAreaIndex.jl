@@ -26,9 +26,11 @@ function PolarImage(img::AbstractMatrix, cl::CameraLens, mask::Mask)
     imgspiral = img[mask.mask_spiral_ind]
     PolarImage{eltype(img), typeof(img), NoSlope, Mask}(cl, NoSlope(), mask, imgsort, imgspiral)
 end
+
 getϕsort(polim::PolarImage{T,<:AbstractMatrix,<:SlopeInfo, NoMask}) where T = polim.cl.ϕsort
 getϕsort(polim::PolarImage{T,<:AbstractMatrix,<:SlopeInfo, Mask})   where T = polim.mask.mask_ϕsort
 
+"Return the first and last index for the sorted image to abtain pixels in a given zenith range."
 function firstlastind(polim::PolarImage{T,<:AbstractMatrix, NoSlope, NoMask}, θ1::Real, θ2::Real) where T
     firstlastind(polim.cl, θ1, θ2)
 end
@@ -62,7 +64,7 @@ function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
     if isa(polim.mask, NoMask)
         adj = n/2π    
         for ind in ind_first:ind_last
-            ϕ = ϕs[ind]
+            ϕ = ϕsort[ind]
             indn = ceil(Int, (ϕ + pi) * adj)
             push!(segmvec[indn], imgsort[ind])
         end
@@ -71,7 +73,7 @@ function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
         maskrange = ϕmax - ϕmin
         adj = n / (2π - maskrange)
         for ind in ind_first:ind_last
-            ϕ = ϕs[ind]
+            ϕ = ϕsort[ind]
             ϕ += ifelse(ϕ < ϕmax, maskrange, 0)
             indn = ceil(Int, (ϕ + pi - maskrange) * adj)
             push!(segmvec[indn], imgsort[ind])
@@ -80,7 +82,7 @@ function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
     segmvec
 end
 
-Base.eltype{T}(polim::PolarImage{T}) = T
+Base.eltype(polim::PolarImage{T}) where T = T
 Base.length(pm::PolarImage) = length(getϕsort(pm))
 Base.size(pm::PolarImage) = size(pm.img)
 
@@ -91,7 +93,7 @@ function Base.show(io::IO, polim::PolarImage)
 end
 
 # generic constructor for testing
-genPolarImage(M) = PolarImage(M, gencalibrate(M))
+# genPolarImage(M) = PolarImage(M, gencalibrate(M))
 
 # slope(polim::PolarImage) = slope(polim.slope)
 # aspect(polim::PolarImage) = aspect(polim.slope)

@@ -8,7 +8,7 @@ so ρ² and ϕ only need to be (pre)calculated per camera+lens once.
 We assume the lens has at least 180ᵒ field of view.
 """
 struct CameraLens
-    height  :: Int # number of rows of image = size(image, 1)
+    height :: Int # number of rows of image = size(image, 1)
     width :: Int # number of columns of image = size(image, 2)
     ci :: Int    # lens center is located at image[ci,cj]
     cj :: Int
@@ -66,7 +66,7 @@ function check_calibration_inputs(height, width, ci::Int, cj::Int, fθρ::Functi
     abs(ci/height - 0.5) > 0.1 && warn("cj ($ci) more than 10% away from center ($(height/2)).")
     abs(cj/width  - 0.5) > 0.1 && warn("ci ($cj) more than 10% away from center ($(width/2).")
 
-    abs(ci/height - 0.5) > 0.2 && error("ci ($ci) more than 20% away from center ($(heigth/2).")
+    abs(ci/height - 0.5) > 0.2 && error("ci ($ci) more than 20% away from center ($(height/2).")
     abs(cj/width - 0.5) > 0.2 && error("cj ($cj) more than 20% away from center ($(width/2)).")
 
     @assert fθρ(0.0) >= 0

@@ -2,7 +2,8 @@
 
 module LeafAreaIndex
 
-import Optim, FileIO, Netpbm
+using Optim: optimize, minimizer
+import FileIO, Netpbm
 
 # in calibration.jl
 using Graphics: Point, norm
@@ -10,7 +11,7 @@ using Optim: optimize
 using DataFrames
 
 export rawblueread, CameraLens, PolarImage, Slope, Mask,
-    pixels, gapfraction, contactfreq,
+    pixels, gapfraction, contactfreqs,
     threshold, EdgeDetection, MinimumThreshold, RidlerCalvard,
     inverse, Zenith57, Miller, Lang, EllipsLUT, EllipsOpt,
     langxiang45, chencihlar,
@@ -24,7 +25,7 @@ function checkθ1θ2(θ1, θ2)
 end
 
 "Specialed type for immutable streaming sum, based on PR #18 from StreamStats.jl"
-immutable StreamMean
+struct StreamMean
     streamsum::Float64
     len::Int
 end
@@ -53,7 +54,6 @@ include("CameraLens.jl")
 include("Slope.jl")
 include("Mask.jl")
 include("PolarImage.jl")
-#include("PolarRings.jl")
 include("thresholding.jl")
 include("gapfraction.jl")
 include("inversion.jl")
