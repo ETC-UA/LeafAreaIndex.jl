@@ -11,11 +11,14 @@
 # source [http://vkphotoblog.blogspot.be/2014/05/dcraw-921-for-os-x-mavericks-users.html]
 
 # ### dcraw options
-# * -W: avoids stretching ("No matter how dark an image is, dcraw's auto-exposure stretches it so that one percent of its pixels appear white. The "-W" option avoids this behavior.")
+# * -W: avoids stretching ("No matter how dark an image is, dcraw's auto-exposure stretches it so 
+#       that one percent of its pixels appear white. The "-W" option avoids this behavior.")
 # * -4: is for linear 16-bit, same as -6 -W -g 1 1 (with -g for gamma correction)
 # * -j: don't stretch or rotate raw pixels
 # * -t [0-7]: flip image (0=none)
-# * -D: document mode without scaling (totally raw), while -d scales to 16bit (eg from 14bit). Either use -D and then reinterpret in julia or use -d. We now use -d otherwise we need to extract image property for bit depth (12bit, 14bit, ...).
+# * -D: document mode without scaling (totally raw), while -d scales to 16bit (eg from 14bit). 
+#       Either use -D and then reinterpret in julia or use -d. We now use -d otherwise we need to 
+#       extract image property for bit depth (12bit, 14bit, ...).
 # * -r 0 0 0 1: select only the blue channel (see Brusa and Bunker, 2014). This option selects from a bayer RGGB layout.
 # * -v: for verbose output
 
@@ -44,7 +47,11 @@ end
 
 """Read in the raw blue channel from a raw image. The image is copied to
 a temporary directory and run through dcraw with options `-d -4 -j -t 0 -r 0 0 0 1`."""
-function rawblueread(filepath::String;
+rawblueread(filepath::String; kwargs...) = readraw(filepath,  "-d -4 -j -t 0 -r 0 0 0 1", ".pgm"; kwargs...)
+
+rawcolourread(filepath::String; kwargs...) = readraw(filepath, "-4 -j -t 0", ".ppm"; kwargs...)
+
+function readraw(filepath::String, dcraw_options::String, pgm_ext::String; 
     overwrite=false, destdir=joinpath(tempdir(), "pgm"), rmcopy=true, rmpgm=true)
 
     @assert isfile(filepath) 
@@ -52,10 +59,11 @@ function rawblueread(filepath::String;
     @assert ext ∈ RAW_EXT
     isdir(destdir) || mkdir(destdir)
 
-    raw2pgm(f) = run(`$DCRAW_EXE -d -4 -j -t 0 -r 0 0 0 1 $f`)
+    raw2pgm(f) = run(`$DCRAW_EXE $dcraw_options $f`)
 
     copyfile = joinpath(destdir, last(splitdir(filepath)))
-    pgm = first(splitext(copyfile)) * ".pgm"
+    @assert (pgm_ext in [".pgm", ".ppm"])
+    pgm = first(splitext(copyfile)) * pgm_ext
 
     if !overwrite && isfile(pgm)
         return FileIO.load(pgm)

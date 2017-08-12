@@ -9,7 +9,8 @@ import FileIO, Netpbm, Optim, ColorTypes
 using Graphics: Point, norm
 using DataFrames
 
-export rawblueread, CameraLens, PolarImage, Slope, Mask,
+export rawblueread, rawcolourread,
+    CameraLens, PolarImage, Slope, Mask,
     pixels, gapfraction, contactfreqs, RedMax,
     threshold, EdgeDetection, MinimumThreshold, RidlerCalvard,
     inverse, Zenith57, Miller, Lang, EllipsLUT, EllipsOpt,
