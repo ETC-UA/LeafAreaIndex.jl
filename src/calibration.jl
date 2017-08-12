@@ -1,9 +1,3 @@
-using Graphics: Point, norm
-
-using Optim
-using DataFrames
-# TODO use Gadfly or Compose instead of Winston, b/c it will not precompile
-#import Winston
 
 # some auxilary functions
 dist(p::Point, q::Point) = norm(p-q)
@@ -39,7 +33,7 @@ function calibrate_center(df::DataFrame, height::Int, width::Int)
     @assert 3 <= Nρ <= 5
 
     all(by(df, :circle, length)[2]) > 0 || error("Different number of pictures per circle.")
-    Nϕ = int(nrow(df) / Nρ)
+    Nϕ = Int(nrow(df) / Nρ)
     @assert Nϕ * Nρ == nrow(df)
 
     @assert all(df[:x] .< width)
@@ -89,12 +83,12 @@ function calibrate_center(df::DataFrame, height::Int, width::Int)
         end
         init
     end
-    pic_center = Point(ifloor(width/2),ifloor(height/2))
+    pic_center = Point(floor(Int, width/2),floor(Int, height/2))
 
     # We optimize using the Nelder-Mead downhill simplex algorithm,
     # the default for functions without a derivate explicetly defined.
     res = optimize(sse, initsse(pic_center, points), iterations=10_000)
-    return lensx, lensy = int(res.minimum[1:2])
+    return lensx, lensy = round(Int, minimizer(res[1:2]))
 end
 
 
@@ -143,7 +137,7 @@ function calibrate_projfun(df::DataFrame, height::Int, width::Int)
         cm2 = s2[:cm]
 
         if (x < minimum(x2)) | (x > maximum(x2))
-            return(nan(Float64))
+            return NaN
         end
 
         ind = searchsortedfirst(x2, x)
@@ -176,7 +170,7 @@ function calibrate_projfun(df::DataFrame, height::Int, width::Int)
                 N_LATERAL)
     resright = optimize(Δ -> fitΔ(Δ, right1, right2, c1, c2), Δinit/2, Δinit * 3/2)
 
-    Δ = (resleft.minimum + resright.minimum) / 2
+    Δ = (minimizer(resleft) + minimizer(resright)) / 2
     @show Δ
 
     # With a more precise estimation of Δ, we can estimate H1 more precisely.
@@ -227,7 +221,7 @@ function calibrate_projfun(df::DataFrame, height::Int, width::Int)
     lens1 = df[df[:H] .== H1, :]
     lens2 = df[df[:H] .== H2, :]
     Hres = optimize(H->projfundiff(H, Δ, lens1, lens2, c1, c2), H1 / 2, H1 * 2)
-    H = Hres.minimum
+    H = minimizer(Hres)
     @show H
 
     a1, b1 = abfit(projfunpoints(lens1, c1, H)...)

@@ -1,10 +1,10 @@
 const RIDLER_CALVARD_MAX_ITER = 100
 const RIDLER_CALVARD_TOL = 1e-6
 
-abstract ThresholdMethod
-type RidlerCalvard    <: ThresholdMethod end
-type EdgeDetection    <: ThresholdMethod end
-type MinimumThreshold <: ThresholdMethod end
+abstract type ThresholdMethod end
+struct RidlerCalvard    <: ThresholdMethod end
+struct EdgeDetection    <: ThresholdMethod end
+struct MinimumThreshold <: ThresholdMethod end
 
 threshold(polim::PolarImage) = threshold(polim, RidlerCalvard())
 threshold(polim::PolarImage, ::RidlerCalvard) = threshold(pixels(polim), RidlerCalvard())
@@ -52,13 +52,13 @@ end
 # ---------------------
 
 "Specialized type for a fast circular queue."
-type circqueue{T}
+mutable struct circqueue{T}
     array::Vector{T}
     len::Int
     index::Int #to be replaced
 end
 circqueue(A::AbstractVector) = circqueue{eltype(A)}(A, length(A), 1)
-function pushshift!{T}(f::circqueue{T}, input::T)
+function pushshift!(f::circqueue{T}, input::T) where T
     ind = f.index
     len = f.len
     output = f.array[ind]
@@ -110,24 +110,30 @@ end
 
 function threshold(gray::AbstractArray, ::EdgeDetection)
     # maximization so use negative sign
-    res = Optim.optimize(x -> -edgefoptim(gray, x), 0.01, 0.99)
-    res.minimum
+    res = optimize(x -> -edgefoptim(gray, x), 0.01, 0.99)
+    minimizer(res)
 end
 
 # Cut out box around fθρ(π/2) to reduce for polarimage argument
-"""Edge Detection method for automatic thresholding after Nobis & Hunziker, 2005.
+"""
+    threshold(polar_image, EdgeDetection())
+
+Edge Detection method for automatic thresholding after Nobis & Hunziker, 2005.
+
 It optimizes the threshold to find the maximum value of the contrast mean at edges.
-Method is slightly adapted from original by normalizing the contrast mean with the
+The method has been slightly adapted from the original by normalizing the contrast mean with the
 sqrt (because 2D) of edges count, to avoid spurious results with high threshold
-values and very little edges."""
+values and very little edges.
+"""
 function threshold(polim::PolarImage, ::EdgeDetection)
-    Rmax = ceil(Int, polim.cl.fθρ(π/2))
-    ci = polim.cl.ci
-    cj = polim.cl.cj
+    rows, cols = size(polim)
+    Rmax   = ceil(Int, polim.cl.fθρ(π/2))
+    ci     = polim.cl.ci
+    cj     = polim.cl.cj
     rowmin = max(1, ci - Rmax)
-    rowmax = min(polim.cl.size1, ci + Rmax)
+    rowmax = min(rows, ci + Rmax)
     colmin = max(1, cj - Rmax)
-    colmax = min(polim.cl.size2, cj + Rmax)
+    colmax = min(cols, cj + Rmax)
     threshold(polim.img[rowmin:rowmax, colmin:colmax], EdgeDetection())
 end
 
@@ -194,7 +200,7 @@ See paper Glasbey 1993 Analysis of Histogram-Based Thresholding Algorithms.
 It does not work for integer, because isbimodal can get stuck in instability.
 Smooths the vector according to $y_i = (y_{i-1} + y_i + y_{i+1})/3$.
 """
-function smooth_hist!{T<:AbstractFloat}(hc::AbstractArray{T})
+function smooth_hist!(hc::AbstractArray{<:AbstractFloat})
     hc[end] = (hc[end-1] + hc[end]) / 3
     prev = hc[1]
     c = hc[2]

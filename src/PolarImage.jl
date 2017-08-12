@@ -1,87 +1,101 @@
 ## PolarImage ##
 const APPROX_N=100
 
-# Type to contain an image and its polar transform
-type PolarImage{T, A <: AbstractMatrix}
-    cl::CameraLens
-    slope::SlopeInfo
-    img::A              #original image
-    imgsort::Vector{T}  #image sorted by ρ², then ϕ
-    imgspiral::Vector{T}#image spiral sorted
-    τsort::Vector{Float64}# incidence angle τ for sloped images, sorted as imgsort
-end 
+"Type to contain an image and its polar transform"
+struct PolarImage{T, S <:SlopeInfo, M <: MaskInfo}
+    cl :: CameraLens
+    slope :: S
+    mask :: M
+    img                      # original image, required for EdgeDetection
+    imgsort :: Vector{T}     # image sorted by ρ², then ϕ
+    imgspiral :: Vector{T}   # image spiral sorted
+end
 
-# PolarImage constructor
-function PolarImage(img::AbstractMatrix, cl::CameraLens)
+# PolarImage constructors. Note that masking and slope are mutually exclusive (for now no crops on slopes considered).
+function PolarImage(img::AbstractMatrix, cl::CameraLens, sl::SlopeInfo)
     @assert size(img) == size(cl)
-    imgsort = img[cl.sort_ind]
+    imgsort   = img[cl.sort_ind]
     imgspiral = img[cl.spiral_ind]
-    τsort = create_τsort(NoSlope(), cl)
-    PolarImage{eltype(img), typeof(img)}(cl, NoSlope(), img, imgsort, imgspiral, τsort)
+    PolarImage{eltype(img), typeof(sl), NoMask}(cl, sl, NoMask(), img, imgsort, imgspiral)
 end
 
-function PolarImage(img::AbstractMatrix, cl::CameraLens, slope::Slope)
+PolarImage(img::AbstractMatrix, cl::CameraLens) = PolarImage(img, cl, NoSlope())
+
+function PolarImage(img::AbstractMatrix, cl::CameraLens, mask::Mask)
     @assert size(img) == size(cl)
-    imgsort = img[cl.sort_ind]
-    imgspiral = img[cl.spiral_ind]
-    τsort = create_τsort(slope, cl)
-    PolarImage{eltype(img), typeof(img)}(cl, slope, img, imgsort, imgspiral,τsort)
+    imgsort   = img[mask.mask_sort_ind]
+    imgspiral = img[mask.mask_spiral_ind]
+    PolarImage{eltype(img), NoSlope, Mask}(cl, NoSlope(), mask, img, imgsort, imgspiral)
 end
 
-PolarImage(img::AbstractMatrix, cl::CameraLens, slope::NoSlope) = PolarImage(img, cl)
+getϕsort(polim::PolarImage{T,<:SlopeInfo, NoMask}) where T = polim.cl.ϕsort
+getϕsort(polim::PolarImage{T,<:SlopeInfo, Mask})   where T = polim.mask.mask_ϕsort
 
-function create_τsort(sl::NoSlope, cl::CameraLens)
-    # create θ in case of no slope
-    τsort = similar(cl.ϕsort)
-    ρ²sort = cl.ρ²sort 
-    fρ²θ = approx_fρ²θ(cl)
-    @inbounds for i = 1:length(τsort)
-        τsort[i] = fρ²θ(τsort[i])
+"Return the first and last index for the sorted image to abtain pixels in a given zenith range."
+function firstlastind(polim::PolarImage{T, NoSlope, NoMask}, θ1::Real, θ2::Real) where T
+    firstlastind(polim.cl, θ1, θ2)
+end
+function firstlastind(polim::PolarImage{T, Slope, NoMask}, θ1::Real, θ2::Real) where T
+    α, ε = params(polim.slope)
+    θmax = min(θ2, pi/2 - α)
+    firstlastind(polim.cl, θ1, θmax)
+end
+function firstlastind(polim::PolarImage{T, NoSlope, Mask}, θ1::Real, θ2::Real) where T
+    checkθ1θ2(θ1,θ2)
+    ind_first = searchsortedfirst(polim.mask.mask_ρ²sort, polim.cl.fθρ(θ1)^2)
+    ind_last  = searchsortedlast( polim.mask.mask_ρ²sort, polim.cl.fθρ(θ2)^2)
+    ind_first, ind_last
+end
+
+"Return all image pixels between two given zenith angles."
+function pixels(polim::PolarImage, θ1::Real, θ2::Real)
+    ind_first, ind_last = firstlastind(polim, θ1, θ2)
+    view(polim.imgsort, ind_first:ind_last)
+end
+pixels(polim::PolarImage) = pixels(polim, 0, π/2)
+
+"Return segments of pixelring [θ1, θ2] in n azimuth groups between 0 and 2π"
+function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
+    checkθ1θ2(θ1,θ2)
+    ind_first, ind_last = firstlastind(polim, θ1, θ2)
+    segmvec = [eltype(polim)[] for i = 1:n]
+    imgsort = polim.imgsort
+    ϕsort = getϕsort(polim)
+
+    if isa(polim.mask, NoMask)
+        adj = n/2π    
+        for ind in ind_first:ind_last
+            ϕ = ϕsort[ind]
+            indn = ceil(Int, (ϕ + pi) * adj)
+            push!(segmvec[indn], imgsort[ind])
+        end
+    else
+        _, ϕmin, ϕmax = params(polim.mask)
+        maskrange = ϕmax - ϕmin
+        adj = n / (2π - maskrange)
+        for ind in ind_first:ind_last
+            ϕ = ϕsort[ind]
+            ϕ += ifelse(ϕ < ϕmax, maskrange, 0)
+            indn = ceil(Int, (ϕ + pi - maskrange) * adj)
+            push!(segmvec[indn], imgsort[ind])
+        end
     end
-    τsort
+    segmvec
 end
 
-function create_τsort(sl::Slope, cl::CameraLens)
-    τsort = deepcopy(cl.ϕsort)
-    ρ²sort = cl.ρ²sort    
-    #fρ²θ(ρ²) = cl.fρθ(sqrt(ρ²)) 
-    fρ²θ = approx_fρ²θ(cl)
-    α = sl.α
-    ε = sl.ε
-    @inbounds for i = 1:length(τsort)
-        θ = fρ²θ(ρ²sort[i])
-        ϕ = τsort[i]
-        τsort[i] = acos(cos(θ)*cos(α) + sin(θ)*cos(ε-ϕ)*sin(α))
-    end
-    τsort
-end
-
-function approx_fρ²θ(cl::CameraLens; N=APPROX_N)    
-    # fit θ(x) = a*sqrt(x) + bx + c*x^3/2 with x=ρ² for fast inverse projection function
-
-    ρ² = linspace(0, cl.ρ²sort[end], N)
-    A = [ρ²ᵢ^p for ρ²ᵢ in ρ², p in [0.5, 1, 1.5]]
-    a,b,c = A \ map(cl.fρθ, sqrt(ρ²))
-    
-    f = FastAnonymous.@anon x -> (a*sqrt(x) + b*x + c*x^1.5)
-    return f
-end
-
-
-slope(polim::PolarImage) = slope(polim.slope)
-aspect(polim::PolarImage) = aspect(polim.slope)
-has_slope(polim::PolarImage) = isa(polim.slope, Slope)
-
-# generic constructor for testing
-genPolarImage(M) = PolarImage(M, gencalibrate(M))
-
-Base.eltype{T}(polim::PolarImage{T}) = T
-Base.length(pm::PolarImage) = length(pm.cl.ρ²sort)
-Base.size(pm::PolarImage) = size(pm.img)
+Base.eltype(polim::PolarImage{T}) where T = T
+Base.length(pm::PolarImage) = length(getϕsort(pm))
+Base.size(pm::PolarImage) = size(pm.cl)
 
 function Base.show(io::IO, polim::PolarImage)
-    with_out = ifelse(isa(polim.slope, NoSlope), "without", "with")
-    print(io::IO, "PolarImage $with_out slope")
+    slope = ifelse(isa(polim.slope, NoSlope), "without", "with")
+    mask  = ifelse(isa(polim.mask,  NoMask ), "without", "with")
+    print(io::IO, "PolarImage $slope slope and $mask mask")
 end
-Base.writemime(io::IO, ::MIME"text/plain", cl::CameraLens) = show(io, cl)
 
+# generic constructor for testing
+# genPolarImage(M) = PolarImage(M, gencalibrate(M))
+
+# slope(polim::PolarImage) = slope(polim.slope)
+# aspect(polim::PolarImage) = aspect(polim.slope)
+# has_slope(polim::PolarImage) = isa(polim.slope, Slope)

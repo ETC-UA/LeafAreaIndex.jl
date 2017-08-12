@@ -23,16 +23,17 @@ const LUT_NMEDIAN = 25 # number of points to sample (median) LAI from Weiss 2004
 Better to use a simple method such as `zenith57` or `lang` for a realistic
 LAI starting point for keyword argument `LAI_init`."""
 const DEFAULT_LAI_INIT = 3.0
+# min LAI value for warning and box constrained optimization. Was 0.2 for upward LAI, but reduced to 0.05 for crops.
+const LAI_MIN = 0.05
+const LAI_MAX = 10.0
 
-abstract InversionMethod
-type Zenith57    <: InversionMethod end
-type Lang        <: InversionMethod end
-type Miller      <: InversionMethod end
-type MillerGroup <: InversionMethod end
-type MillerNaive <: InversionMethod end
-type MillerRings <: InversionMethod end
-type EllipsOpt   <: InversionMethod end
-type EllipsLUT   <: InversionMethod end
+abstract type InversionMethod end
+struct Zenith57    <: InversionMethod end
+struct Lang        <: InversionMethod end
+struct Miller      <: InversionMethod end
+struct MillerRings <: InversionMethod end
+struct EllipsOpt   <: InversionMethod end
+struct EllipsLUT   <: InversionMethod end
 
 
 ## Generic function
@@ -57,15 +58,22 @@ end
 Because the logarithm of the gap fraction is calculated, there's a delicate trade off
 between more rings for more algorithmic accuracy and more pixels per ring 
 (i.e. less rings) for more accurate log gap fraction per ring."
-function Nrings_def(polim::PolarImage)
+function Nrings_def(polim::PolarImage)::Int
     N = ceil(Int, polim.cl.fθρ(pi/2) / MILLER_GROUPS)
     if isa(polim.slope, NoSlope)
         return N
     else
-        return max(NRINGS_MIN_SLOPE, N / AZIMUTH_GROUPS)
+        return max(NRINGS_MIN_SLOPE, ceil(Int, N / AZIMUTH_GROUPS))
     end
 end
-
+function maxviewangle(polim::PolarImage, θmax=θMAX)
+    if isa(polim.slope, Slope)
+        α, ε = params(polim.slope)
+        return min(θmax, pi/2 - α)
+    else
+        return θmax
+    end
+end
 
 ## Constant angle
 ## --------------
@@ -98,76 +106,15 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
     2 * sum(linreg(θmid, K))
 end
 
-
 ## Miller's formula
 ## ----------------
 
 """
-Miller's formula assumes a constant leaf angle. We implement 3 methods:
-* the naive one taking the integration for each unique ρ (`millersimple`)
-* grouping consecutive ρ distances (`millergroup`)
-* dividing the zenith range in N rings each with an equal number of pixels (default).
+Miller's formula assumes a constant leaf angle. We divide the zenith range 
+in N rings each with an equal number of pixels.
 """
 function inverse(polim::PolarImage, thresh, ::Miller; kwargs...) 
     inverse(polim, thresh, MillerRings(); kwargs...)
-end
-
-"""Because the naive method takes too little pixels per iteration, it distorts
-the gap fraction. It is only given for reference."""
-function inverse(polim::PolarImage, thresh, ::MillerNaive; θmax = θMAX, kwargs...)
-    prevθ = 0.0
-    s = 0.0
-    #define inverse function for ρ²
-    fρ²θ(ρ²) = polim.cl.fρθ(sqrt(ρ²))
-
-    for (ρ², ϕ, px) in rings(polim, 0, θmax)
-        θ = fρ²θ(ρ²)
-        dθ = θ - prevθ
-        # slope adjustment should be done per ϕ group, but because we only have
-        # enough pixels per iteration for a single gap fraction, we take the
-        # mean.
-        adj = mean(slope_adj(polim.slope, θ, ϕ))
-        logP = loggapfraction(px, thresh)
-        s -= logP  * cos(θ) * adj * sin(θ) * dθ
-        prevθ = θ
-    end
-    2s
-end
-
-"""Group a number of consecutive ρ²-rings together and then integrate.
- dθ is incorrect for first and last, but the cos or sin will reduce these terms."""
-function inverse(polim::PolarImage, thresh, ::MillerGroup;
-                 group::Integer = MILLER_GROUPS, θmax::Real = θMAX, kwargs...)
-    s = 0.0
-    prevθ = 0.0
-    count = 0
-    pixs = eltype(polim)[]
-    ϕs = Float64[] # keep ϕ for slope adjustment
-    avgθ = StreamMean()
-    # lens projection function from ρ² to θ
-    fρ²θ(ρ²) = polim.cl.fρθ(sqrt(ρ²))
-    for (ρ², ϕ, px) in rings(polim, 0., θmax)
-        count += 1
-        avgθ = update(avgθ, fρ²θ(ρ²))
-        append!(ϕs, ϕ)
-        append!(pixs, px)
-
-        if count == group
-            θ = mean(avgθ)
-            dθ = θ - prevθ
-            logP = loggapfraction(pixs, thresh)
-            adj = mean(slope_adj(polim.slope, θ, ϕ))
-            # TODO rewrite with contactfreqs?
-            s -= logP * cos(θ) * adj * sin(θ) * dθ
-
-            prevθ = θ
-            count = 0
-            empty!(pixs)
-            empty!(ϕs)
-            empty!(avgθ)
-        end
-    end
-    return(2s)
 end
 
 "Create a N rings and integrate. This is the most robust way for Miller's method."
@@ -182,7 +129,6 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
     2 * sum(K .* sin(θmid) .* dθ)
 end
 
-
 ## Ellipsoidal
 ## -----------
 
@@ -193,9 +139,9 @@ G_ellips(θᵥ, χ) = cos(θᵥ) * sqrt(χ^2 + tan(θᵥ)^2) / (χ + 1.702 * (χ
 ALIA_to_x(ALIA) = (ALIA / 9.65).^-0.6061 - 3
 
 "The model that links ALIA and LAI with contact frequency K"
-function model_ellips(θmid::Vector{Float64}, params::Vector{Float64})
-    alia, L = params
-    K = Float64[L * G_ellips(θᵥ, ALIA_to_x(alia)) for θᵥ in θmid]
+function model_ellips(θmid::Vector, params::Vector)
+    alia, LAI = params
+    K = [LAI * G_ellips(θᵥ, ALIA_to_x(alia)) for θᵥ in θmid]
 end
 
 """
@@ -207,34 +153,36 @@ This method uses a curve fitting technique to find the optimal values for the le
 distribution parameter ALIA and the LAI.
 """
 function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float64}, ::EllipsOpt;
-                 LAI_init::Float64 = DEFAULT_LAI_INIT, kwargs...)
+                 LAI_init::Float64 = DEFAULT_LAI_INIT)
 
     LAI_init == DEFAULT_LAI_INIT && warn("Default value detected for `LAI_init`, it's better to use an estimate from `zenith57`.")
-    if !(0.2 < LAI_init < 9)
-        warn("LAI starting point ($LAI_init) for optimization outside limits [0.2, 9] and will be reset.")
+    if !(LAI_MIN < LAI_init < LAI_MAX)
+        warn("LAI starting point ($LAI_init) for optimization outside limits [$LAI_MIN, $LAI_MAX] and will be reset.")
         LAI_init = DEFAULT_LAI_INIT # max(min(LAI_init, 9), 0.2)
     end
 
     # Find an initial value for ALIA
     fitfunalia(alia) = sum((model_ellips(θmid, [alia, LAI_init]) .- K).^2)
-    aliares = Optim.optimize(fitfunalia, 0.1, pi/2 - 0.1)
-    ALIA_init = aliares.minimum
+    aliares = optimize(fitfunalia, 0.1, pi/2 - 0.1)
+    ALIA_init = minimizer(aliares)
+
+    # Optimize both ALIA and LAI at same time
+    fitfun(x) = sum((K .- model_ellips(θmid, x)).^2)
+    initial = [ALIA_init, LAI_init]
+    fitdf = Optim.OnceDifferentiable(fitfun, initial; autodiff = :forward)
 
     try
-        res = LsqFit.curve_fit(model_ellips, θmid, K, [ALIA_init, LAI_init])
-        ALIA, LAI = res.param
+        res = optimize(fitdf, initial, Optim.LBFGS())
+        ALIA, LAI = minimizer(res)
         return LAI
     catch y
         if isa(y, DomainError)
             # in case LsqFit.curve_fit does not converge and wanders out of the
-            # parameter space, use Optim.fminbox.
-            # TODO register MinFinder and use minfinder
-            lower = [0.1, 0.2]
-            upper = [pi/2 - 0.1, 9]
-            fitfun(x) = sum((K .- model_ellips(θmid,x)).^2)
-            fitdf = fitdf = Optim.DifferentiableFunction(fitfun)
-            res = Optim.fminbox(fitdf, [ALIA_init, LAI_init], lower, upper)
-            ALIA, LAI = res.minimum
+            # parameter space, use box constrained optimization.
+            lower = [0.05, LAI_MIN]
+            upper = [pi/2 - 0.05, LAI_MAX]            
+            res = optimize(fitfun, initial, lower, upper, Optim.Fminbox{Optim.LBFGS}())
+            ALIA, LAI = minimizer(res)
             return LAI
         else
             throw(y)
@@ -244,7 +192,7 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
 end
 
 function inverse(polim::PolarImage, thresh, ::EllipsOpt;                     
-                    Nrings = Nrings_def(polim), θmax = θMAX, kwargs...)
+                    Nrings = Nrings_def(polim), θmax = maxviewangle(polim))
     
     θedges, θmid, K = contactfreqs(polim, 0.0, θmax, Nrings, thresh)
     # Find inital value for LAI for optimization
@@ -257,7 +205,7 @@ end
 ## ---------------
 
 "Holds each element of the ellipsoidal Lookup Table method."
-immutable LUTel
+struct LUTel
     alia::Float64
     LAI::Float64
     modelled::Array{Float64}
@@ -266,7 +214,7 @@ end
 """Populates a Lookup Table (Weiss 2004) with random contact frequencies for a 
 range of ALIA and LAI values"""
 function populateLUT(θmid::Vector{Float64}; Nlut = LUT_POINTS)
-    LAI_max = 9.0
+    LAI_max = LAI_MAX
     LUT = Array(LUTel, Nlut)
     alia_max = pi/2 - .001 #against possible instability at π/2
     # As in paper [Weiss2004], populate LUT randomly.

@@ -12,7 +12,7 @@ To determine pixel coordinates of calibration images we recommend to use the [Im
 
 The easiest way to determine the lens center is the prick a few holes in the lens cap (or in an attached alumium foile on top of the lens) and use  pictures of the holes turned several times. These holes should each lie on a circle with the lens center in the middle. 
 
-We provide an [IJulia](https://github.com/JuliaLang/IJulia.jl) notebook with the necessary straightforward calculations: https://github.com/ETC-UA/LeafAreaIndex.jl/blob/master/calibration/LensCenterCalibration.ipynb
+We provide an [IJulia](https://github.com/JuliaLang/IJulia.jl) notebook with the necessary straightforward calculations [here](https://github.com/ETC-UA/LeafAreaIndex.jl/blob/master/calibration/CenterCalibration.ipynb)
 
 ## Lens Projection Function
 
@@ -22,4 +22,4 @@ Also the inverse projection function is required by `calibration` method and sim
 
 Note that for both projection functions the calibration method you can provide any function between two scalars in the appropriate domain, not just a polynomial function.
 
-We follow the setup from the [CAN_EYE user guide](http://www6.paca.inra.fr/can-eye/Documentation-Publications/Documentation) and again provide an [IJulia notebook](https://github.com/ETC-UA/LeafAreaIndex.jl/blob/master/calibration/ProjectionFunctionCalibraton.ipynb) with the implementation.
+We follow the setup from the [CAN_EYE user guide](http://www6.paca.inra.fr/can-eye/Documentation-Publications/Documentation) and again provide an [IJulia notebook](https://github.com/ETC-UA/LeafAreaIndex.jl/blob/master/calibration/ProjFunctionCalibration2.ipynb) with the implementation.

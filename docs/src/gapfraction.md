@@ -9,7 +9,7 @@ Therefore we work on the basis of a single light intensity value for each pixel,
 
 In general, these binarization methods determine a single global threshold between sky and vegatation. Any pixel with values above this threshold is considered sky.
 
-The standard method is from [Ridler Calvard, 1978](ftp://krill.antcrc.utas.edu.au/pub/el2/Papers/Thresholding/Ridler%20and%20Calvard,%201978.pdf), which is similar to [k-means clustering](http://en.wikipedia.org/wiki/K-means_clustering) with two classes in one dimension.
+The standard method is from [Ridler Calvard, 1978](http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4310039), which is similar to [k-means clustering](http://en.wikipedia.org/wiki/K-means_clustering) with two classes in one dimension.
 
 The second method is the [Minimum method](ftp://krill.antcrc.utas.edu.au/pub/el2/Papers/Thresholding/Glasbey,%201993.pdf) that looks for the minimum between two peaks in the histogram.
 

@@ -3,8 +3,8 @@ os:
   - linux
   - osx
 julia:
-  - 0.4
-  - release
+  - 0.6
+  #- release #still runs 0.5
   #- nightly
 notifications:
   email: true
@@ -12,3 +12,6 @@ notifications:
 #script:
 #  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 #  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("LeafAreaIndex"); Pkg.test("LeafAreaIndex"; coverage=true)'
+after_success:
+  - julia -e 'Pkg.add("Documenter")'
+  - julia -e 'cd(Pkg.dir("LeafAreaIndex")); include(joinpath("docs", "make.jl"))'

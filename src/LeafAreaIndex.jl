@@ -1,12 +1,17 @@
-__precompile__()
+#__precompile__()
 
 module LeafAreaIndex
 
-import FixedPointNumbers, ArrayViews, Optim, LsqFit, FastAnonymous,
-       Netpbm
+using Optim: optimize, minimizer
+import FileIO, Netpbm, Optim, ColorTypes
 
-export rawblueread, CameraLens, PolarImage, Slope, 
-    pixels, gapfraction, contactfreq,
+# in calibration.jl
+using Graphics: Point, norm
+using DataFrames
+
+export rawblueread, rawcolourread,
+    CameraLens, PolarImage, Slope, Mask,
+    pixels, gapfraction, contactfreqs, RedMax,
     threshold, EdgeDetection, MinimumThreshold, RidlerCalvard,
     inverse, Zenith57, Miller, Lang, EllipsLUT, EllipsOpt,
     langxiang45, chencihlar,
@@ -20,7 +25,7 @@ function checkθ1θ2(θ1, θ2)
 end
 
 "Specialed type for immutable streaming sum, based on PR #18 from StreamStats.jl"
-immutable StreamMean
+struct StreamMean
     streamsum::Float64
     len::Int
 end
@@ -47,12 +52,11 @@ end
 
 include("CameraLens.jl")
 include("Slope.jl")
+include("Mask.jl")
 include("PolarImage.jl")
-include("PolarRings.jl")
-include("PolarPixels.jl")
-include("PolarSegments.jl")
 include("thresholding.jl")
 include("gapfraction.jl")
+include("crops.jl")
 include("inversion.jl")
 include("clumping.jl")
 include("ChenCihlar.jl")

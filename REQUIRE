@@ -1,9 +1,7 @@
-julia 0.4
-FixedPointNumbers 0.1
-ArrayViews
+julia 0.6
 Optim
-LsqFit
-FastAnonymous
-Gadfly
-Graphics
+FileIO
 Netpbm
+DataFrames
+Graphics
+ColorTypes
