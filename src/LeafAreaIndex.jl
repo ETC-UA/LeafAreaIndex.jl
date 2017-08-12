@@ -10,7 +10,7 @@ using Graphics: Point, norm
 using DataFrames
 
 export rawblueread, CameraLens, PolarImage, Slope, Mask,
-    pixels, gapfraction, contactfreqs,
+    pixels, gapfraction, contactfreqs, RedMax,
     threshold, EdgeDetection, MinimumThreshold, RidlerCalvard,
     inverse, Zenith57, Miller, Lang, EllipsLUT, EllipsOpt,
     langxiang45, chencihlar,

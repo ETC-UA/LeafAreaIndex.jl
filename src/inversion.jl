@@ -157,7 +157,7 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
 
     LAI_init == DEFAULT_LAI_INIT && warn("Default value detected for `LAI_init`, it's better to use an estimate from `zenith57`.")
     if !(LAI_MIN < LAI_init < LAI_MAX)
-        warn("LAI starting point ($LAI_init) for optimization outside limits [0.2, 9] and will be reset.")
+        warn("LAI starting point ($LAI_init) for optimization outside limits [$LAI_MIN, $LAI_MAX] and will be reset.")
         LAI_init = DEFAULT_LAI_INIT # max(min(LAI_init, 9), 0.2)
     end
 
