@@ -1,12 +1,11 @@
 # LeafAreaIndex
 
 [![Build Status](https://travis-ci.org/ETC-UA/LeafAreaIndex.jl.svg?branch=master)](https://travis-ci.org/ETC-UA/LeafAreaIndex.jl)
-[![Documentation Status](https://readthedocs.org/projects/leafareaindexjl/badge/?version=master)](https://readthedocs.org/projects/leafareaindexjl/?badge=master)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/ETC-UA/LeafAreaIndex.jl?branch=master&svg=true)](https://ci.appveyor.com/project/ETCUA/LeafAreaIndex-jl/branch/master)
 
 Tools to work with [hemispherical pictures](http://en.wikipedia.org/wiki/Hemispherical_photography) for the determination of [Leaf Area Index (LAI)](http://en.wikipedia.org/wiki/Leaf_area_index).
 
-View the full documentation on readthedocs: http://leafareaindexjl.readthedocs.org .
+View the full documentation on (https://etc-ua.github.io/LeafAreaIndex.jl).
 
 # Quick introduction
 
@@ -54,6 +53,12 @@ For images taken (always vertically upwards) on a domain with a *slope* of eg 10
 
     myslope = Slope(10/180*pi, pi/2)
     polarimg = PolarImage(imgblue, mycameralens, myslope)
+    
+For downward taken (crop) images, create a `mask` to cut out the photographer's shoes and use the `RedMax()` method instead of thresholding to separate soil from (green) plant material
+
+    mymask = Mask(pi/3, -2*pi/3, -pi/3)
+    polarimg = PolarImage(imgblue, mycameralens, myslope)
+    LAI = inverse(polarimg, RedMax())
 
 Besides the default Ridler Calvard method, two more automatic *thresholding*methods Edge Detection and Minimum algorithm can be used:
     
@@ -86,12 +91,6 @@ To access the pixels in a particular zenith range, `pixels(polarimg, pi/6, pi/3)
 
 The `segments` function can further split these ring pixels in n segments (eg. for clumping calculation). It returns a vector with n elements, each again a vector with the segment pixels.
 
-You can also construct an *iterator* to access a specific zenith range. It will return the pixels on each ring in the range by increasing integer ρ² in a tuple with a vector of polar angles ϕ and a vector of corresponding pixels.
-    
-    for (ρ², ϕ, px) in rings(polarimg, pi/6, pi/3)
-        # do something with each ρ², ϕ, px variable
-    end
-
 For the *gapfraction*, we suggest (see online documentation) to use the contact frequencies $K(\theta_V) = -\ln[T(\theta_v)] \cos\theta_V$ for LAI inversion calculations, with $T$ the gapfraction and $\theta_V$ the view angle. The input N determines the number of rings between view angles θ1 and θ2 for a polimg with a certain treshold. The function returns a vector with angle edges of the rings, the weighted average midpoint angle for each ring and the contact frequency for each ring.
 
     θedges, θmid, K = contactfreqs(polimg, θ1, θ2, N, thresh)
@@ -99,5 +98,4 @@ For the *gapfraction*, we suggest (see online documentation) to use the contact 
 In case of problems or suggestion, don't hesitate to submit an issue through the issue tracker or code suggestions through a pull request.
 
 ## Documentation
-Documentation is hosted on readthedocs: http://leafareaindexjl.readthedocs.org .
-
+View the full documentation on (https://etc-ua.github.io/LeafAreaIndex.jl).
