@@ -21,6 +21,7 @@ struct Slope <: SlopeInfo
 end
 params(sp::SlopeParams) = sp.α, sp.ϵ
 params(sl::Slope) = params(sl.params)
+params(sl::NoSlope) = (0.0, 0.0)
 
 function Slope(cl::CameraLens, sp::SlopeParams)
     α, ϵ = params(sp)

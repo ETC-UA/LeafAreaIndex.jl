@@ -1,7 +1,7 @@
 using Documenter, LeafAreaIndex
 
 makedocs(
-    #modules = [LeafAreaIndex],
+    modules = [LeafAreaIndex],
     clean    = true,
     format   = :html,
     sitename = "Leaf Area Index Documentation",
@@ -21,6 +21,7 @@ makedocs(
 deploydocs(
     #root   = Pkg.dir("LeafAreaIndex","docs"),
     repo   = "github.com/ETC-UA/LeafAreaIndex.jl.git",
+    target = "build",
     julia  = "0.6", 
     deps   = nothing, 
     make   = nothing
