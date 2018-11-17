@@ -164,7 +164,7 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
     # Find an initial value for ALIA
     fitfunalia(alia) = sum((model_ellips(θmid, [alia, LAI_init]) .- K).^2)
     aliares = optimize(fitfunalia, 0.1, pi/2 - 0.1)
-    ALIA_init = minimizer(aliares)
+    @show ALIA_init = minimizer(aliares)
 
     # Optimize both ALIA and LAI at same time
     fitfun(x) = sum((K .- model_ellips(θmid, x)).^2)
@@ -181,7 +181,7 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
             # parameter space, use box constrained optimization.
             lower = [0.05, LAI_MIN]
             upper = [pi/2 - 0.05, LAI_MAX]            
-            res = optimize(fitfun, initial, lower, upper, Optim.Fminbox{Optim.LBFGS}())
+            res = optimize(fitfun, lower, upper, initial, Optim.Fminbox(Optim.LBFGS()))
             ALIA, LAI = minimizer(res)
             return LAI
         else
@@ -215,7 +215,7 @@ end
 range of ALIA and LAI values"""
 function populateLUT(θmid::Vector{Float64}; Nlut = LUT_POINTS)
     LAI_max = LAI_MAX
-    LUT = Array(LUTel, Nlut)
+    LUT = Array{LUTel}(Nlut)
     alia_max = pi/2 - .001 #against possible instability at π/2
     # As in paper [Weiss2004], populate LUT randomly.
     # TODO consider using Sobol pseudorandom numbers for consistency.
