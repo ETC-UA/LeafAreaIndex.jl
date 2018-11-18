@@ -164,7 +164,7 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
     # Find an initial value for ALIA
     fitfunalia(alia) = sum((model_ellips(θmid, [alia, LAI_init]) .- K).^2)
     aliares = optimize(fitfunalia, 0.1, pi/2 - 0.1)
-    @show ALIA_init = minimizer(aliares)
+    ALIA_init = minimizer(aliares)
 
     # Optimize both ALIA and LAI at same time
     fitfun(x) = sum((K .- model_ellips(θmid, x)).^2)
