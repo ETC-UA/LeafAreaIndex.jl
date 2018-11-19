@@ -47,33 +47,38 @@ end
 
 """Read in the raw blue channel from a raw image. The image is copied to
 a temporary directory and run through dcraw with options `-d -4 -j -t 0 -r 0 0 0 1`."""
-rawblueread(filepath::String; kwargs...) = readraw(filepath,  "-d -4 -j -t 0 -r 0 0 0 1", ".pgm"; kwargs...)
+rawblueread(filepath::String; kwargs...) = readraw(filepath; kwargs...)
 
-rawcolourread(filepath::String; kwargs...) = readraw(filepath, "-4 -j -t 0", ".ppm"; kwargs...)
+rawcolourread(filepath::String; kwargs...) = readraw(filepath; colour=true, kwargs...)
 
-function readraw(filepath::String, dcraw_options::String, pgm_ext::String; 
-    overwrite=false, destdir=joinpath(tempdir(), "pgm"), rmcopy=true, rmpgm=true)
+function readraw(filepath::String; overwrite=false, rmcopy=true, rmpxm=true,
+    destdir=joinpath(tempdir(), "pxm"), colour=false, kwargs...)
 
     @assert isfile(filepath) 
     ext = lowercase(last(splitext(filepath)))
     @assert ext ∈ RAW_EXT
     isdir(destdir) || mkdir(destdir)
 
-    raw2pgm(f) = run(`$DCRAW_EXE $dcraw_options $f`)
+    if colour
+        raw2pxm = f -> run(`$DCRAW_EXE -4 -j -t 0 $f`)
+        pxm_ext = ".ppm"
+    else
+        raw2pxm = f -> run(`$DCRAW_EXE -d -4 -j -t 0 -r 0 0 0 1 $f`)
+        pxm_ext = ".pgm"
+    end
 
     copyfile = joinpath(destdir, last(splitdir(filepath)))
-    @assert (pgm_ext in [".pgm", ".ppm"])
-    pgm = first(splitext(copyfile)) * pgm_ext
+    pxm = first(splitext(copyfile)) * pxm_ext
 
-    if !overwrite && isfile(pgm)
-        return FileIO.load(pgm)
+    if !overwrite && isfile(pxm)
+        return FileIO.load(pxm)
     end
 
     cp(filepath, copyfile; remove_destination=true)
-    raw2pgm(copyfile)
-    img = FileIO.load(pgm)
+    raw2pxm(copyfile)
+    img = FileIO.load(pxm)
     rmcopy && rm(copyfile)
-    rmpgm && rm(pgm)
+    rmpxm && rm(pxm)
     img
 end
 
