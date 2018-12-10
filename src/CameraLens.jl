@@ -33,7 +33,7 @@ function CameraLens(height::Int, width::Int, ci::Int, cj::Int, fθρ::Function, 
             x = j - cj
             y = ci - i
             ρ²[i,j] = x^2 + y^2
-            ϕ[i,j] = atan2(y, x)
+            ϕ[i,j] = atan(y, x)
         end
     end
     ϕ[ci, cj] = 0.0 #fix ϕ at center
@@ -71,13 +71,13 @@ function check_calibration_inputs(height, width, ci::Int, cj::Int, fθρ::Functi
 
     @assert fθρ(0.0) >= 0
     @assert fθρ(pi/2) >= 2 
-    all(diff(map(fθρ, linspace(0, pi/2, 100))) .> 0) || error("Incorrectly defined fθρ; fθρ not monotonic")
+    all(diff(map(fθρ, range(0, stop=pi/2, length=100))) .> 0) || error("Incorrectly defined fθρ; fθρ not monotonic")
 
     fρθ(0) < 0. && error("Incorrectly defined fρθ; fρθ(0) < 0.")
     fρθ(2) > pi/2 && error("Incorrectly defined fρθ; fρθ(2)> π/2")
-    all(diff(map(fρθ, linspace(0, pi/2, 100))) .> 0) || error("Incorrectly defined fρθ; fρθ not monotonic")
+    all(diff(map(fρθ, range(0, stop=pi/2, length=100))) .> 0) || error("Incorrectly defined fρθ; fρθ not monotonic")
 
-    for θ in linspace(0, pi/2, 100)
+    for θ in range(0, stop=pi/2, length=100)
         @assert θ ≈ fρθ(fθρ(θ))
     end
 end
@@ -97,12 +97,12 @@ function spiralindex(ind, ρmax, ρ²sort, ϕsort)
         ρ²startind = searchsortedfirst(ρ²sort, ρ^2)
         
         ρ²spiralind = sortperm(view(ϕsort, ind_prev:ρ²startind-1))
-        spiralind[ind_prev:ρ²startind-1] = ind_prev - 1 + ρ²spiralind
+        spiralind[ind_prev:ρ²startind-1] = (ind_prev - 1) .+ ρ²spiralind
         ind_prev = ρ²startind
     end
     # last circle of spiral
     ρ²spiralind = sortperm(ϕsort[ind_prev:end])
-    spiralind[ind_prev:end] = ind_prev - 1 + ρ²spiralind
+    spiralind[ind_prev:end] = (ind_prev - 1) .+ ρ²spiralind
     # finally the spiral_ind is to be used on original image, not on ϕsort (or ρsort)
     spiral_ind = ind[spiralind]
 end

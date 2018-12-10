@@ -1,7 +1,8 @@
 module LeafAreaIndex
 
 using Optim: optimize, minimizer
-import FileIO, Netpbm, Optim, ColorTypes
+using Statistics: mean
+import FileIO, Netpbm, Optim, ColorTypes, StatsBase, Statistics
 
 # in calibration.jl
 using Graphics: Point, norm
@@ -29,13 +30,13 @@ struct StreamMean
 end
 StreamMean() = StreamMean(0.0, 0)
 update(sm::StreamMean, term) = StreamMean(sm.streamsum + term, sm.len + 1)
-Base.mean(sm::StreamMean) = sm.streamsum / sm.len
+Statistics.mean(sm::StreamMean) = sm.streamsum / sm.len
 Base.empty!(sm::StreamMean) = StreamMean()
 Base.length(sm::StreamMean) = sm.len
 
 # A fast histogram method derived from julialang PR #8952. Used in thresholding
 # and slope adjustment.
-function fasthist(img::AbstractVector, edg::Range)
+function fasthist(img::AbstractVector, edg::AbstractRange)
     n = length(edg) - 1
     histcount = zeros(Int, n)
     step(edg) <= 0 && error("step(edg) must be positive")

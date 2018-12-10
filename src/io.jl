@@ -31,13 +31,13 @@ const RAW_EXT = String[".3fr", ".ari", ".arw", ".bay", ".crw", ".cr2",
 ".nef", ".nrw", ".obm", ".orf", ".pef", ".ptx", ".pxn", ".r3d", ".raf", ".raw", ".rwl",
 ".rw2", ".rwz", ".sr2", ".srf", ".srw", ".tif", ".x3f"]
 
-const DCRAW_DIR = Pkg.dir("LeafAreaIndex", "src", "dcraw")
+const DCRAW_DIR = joinpath(dirname(pathof(LeafAreaIndex)), "dcraw")
 
-@static if is_windows() 
+@static if Sys.iswindows() 
     const DCRAW_EXE = joinpath(DCRAW_DIR, "dcraw-9.26-ms-64-bit.exe")
 end
 
-@static if is_unix()
+@static if Sys.isunix()
     const DCRAW_EXE = joinpath(DCRAW_DIR, "dcraw")
     is_user_executable(file) = isodd(uperm(file))
     is_user_executable(DCRAW_EXE) || chmod(DCRAW_EXE, 0o755)
@@ -74,7 +74,7 @@ function readraw(filepath::String; overwrite=false, rmcopy=true, rmpxm=true,
         return FileIO.load(pxm)
     end
 
-    cp(filepath, copyfile; remove_destination=true)
+    cp(filepath, copyfile; force=true)
     raw2pxm(copyfile)
     img = FileIO.load(pxm)
     rmcopy && rm(copyfile)

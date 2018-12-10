@@ -47,7 +47,7 @@ end
 
 # "Fit θ(x) = a*sqrt(x) + bx + c*x^3/2 with x=ρ² for fast inverse projection function."
 # function approx_fρ²θ(cl::CameraLens; N=APPROX_N)    
-#     ρ² = linspace(0, cl.ρ²sort[end], N)
+#     ρ² = range(0, stop=cl.ρ²sort[end], length=N)
 #     A = [ρ²ᵢ^p for ρ²ᵢ in ρ², p in [0.5, 1, 1.5]]
 #     a,b,c = A \ cl.fρθ.(sqrt.(ρ²))
 #     #return x -> a*sqrt(x) + b*x + c*x^1.5)
