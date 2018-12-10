@@ -61,13 +61,12 @@ function contactfreqs(polim::PolarImage, sl::NoSlope, θ1::Real, θ2::Real,
     θedges, θmid, K
 end
 
-midpoints(r::Range) = r[1:length(r) - 1] + 0.5 * step(r)
 # Method Schleppi et al 2007
 function contactfreqs_iterate(pixs::AbstractArray, τs::AbstractArray, thresh, θ::Float64;
         Nϕ=AZIMUTH_GROUPS, max_iter=MAX_ITER_τ, tol=SLOPE_TOL)
 
     τmax = π/2
-    τ = midpoints(linspace(0, τmax, Nϕ+1))    
+    τ = StatsBase.midpoints(linspace(0, τmax, Nϕ+1))    
     Aθτ = fasthist(τs, -1/Nϕ : τmax/Nϕ : τmax)
 
     iter = 0
