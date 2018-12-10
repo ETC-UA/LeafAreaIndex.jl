@@ -1,5 +1,3 @@
-#__precompile__()
-
 module LeafAreaIndex
 
 using Optim: optimize, minimizer
