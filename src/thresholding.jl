@@ -195,10 +195,11 @@ function bimodalmin(hc)
     end
     return true
 end
-doc"""
+
+"""
 See paper Glasbey 1993 Analysis of Histogram-Based Thresholding Algorithms.
 It does not work for integer, because isbimodal can get stuck in instability.
-Smooths the vector according to $y_i = (y_{i-1} + y_i + y_{i+1})/3$.
+Smooths the vector according to ``y_i = (y_{i-1} + y_i + y_{i+1})/3```.
 """
 function smooth_hist!(hc::AbstractArray{<:AbstractFloat})
     hc[end] = (hc[end-1] + hc[end]) / 3

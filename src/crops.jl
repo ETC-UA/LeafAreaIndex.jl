@@ -1,7 +1,7 @@
 abstract type CropMethod end
 struct RedMax <: CropMethod end
 
-function isredmax{T <: ColorTypes.AbstractRGB}(p :: T)
+function isredmax(p::T) where T <: ColorTypes.AbstractRGB
     pmax = max(p.r, p.g, p.b)
     # disallow masked and overexposed pixels, assume plants reflect better than dirt
     pmax == 1 && return false

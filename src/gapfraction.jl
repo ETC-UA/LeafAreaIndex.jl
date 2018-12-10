@@ -29,14 +29,14 @@ function weightedrings(polim::PolarImage, θ1::Real, θ2::Real, N::Integer)
     
     fθρ = polim.cl.fθρ
     # create edges for θ rings with similar number of pixels each
-    θedges = map(polim.cl.fρθ, sqrt.(linspace(fθρ(θ1)^2, fθρ(θ2)^2, N+1)))
+    θedges = map(polim.cl.fρθ, sqrt.(range(fθρ(θ1)^2, stop=fθρ(θ2)^2, length=N+1)))
                                              
     #fix possible floating point roundoff errors
     θedges[1] = max(θedges[1], θ1) 
     θedges[end] = min(θedges[end], θ2)
     
     # weighted average midpoints
-    θdouble = map(polim.cl.fρθ, sqrt.(linspace(fθρ(θ1)^2, (fθρ(θ2))^2, 2N+1)))
+    θdouble = map(polim.cl.fρθ, sqrt.(range(fθρ(θ1)^2, stop=(fθρ(θ2))^2, length=2N+1)))
     θmid = θdouble[2:2:2N]
     
     return θedges, θmid
@@ -61,13 +61,12 @@ function contactfreqs(polim::PolarImage, sl::NoSlope, θ1::Real, θ2::Real,
     θedges, θmid, K
 end
 
-midpoints(r::Range) = r[1:length(r) - 1] + 0.5 * step(r)
 # Method Schleppi et al 2007
 function contactfreqs_iterate(pixs::AbstractArray, τs::AbstractArray, thresh, θ::Float64;
         Nϕ=AZIMUTH_GROUPS, max_iter=MAX_ITER_τ, tol=SLOPE_TOL)
 
     τmax = π/2
-    τ = midpoints(linspace(0, τmax, Nϕ+1))    
+    τ = StatsBase.midpoints(range(0, stop=τmax, length=Nϕ+1))    
     Aθτ = fasthist(τs, -1/Nϕ : τmax/Nϕ : τmax)
 
     iter = 0
