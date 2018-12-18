@@ -2,7 +2,7 @@ module LeafAreaIndex
 
 using Optim: optimize, minimizer
 using Statistics: mean
-import FileIO, Netpbm, Optim, ColorTypes, StatsBase, Statistics
+import FileIO, JLD2, Netpbm, Optim, ColorTypes, StatsBase, Statistics, Parameters
 
 # in calibration.jl
 using Graphics: Point, norm
