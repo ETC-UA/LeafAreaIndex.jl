@@ -49,10 +49,9 @@ function fasthist(img::AbstractVector, edg::AbstractRange)
     histcount
 end
 
-include("CameraLens.jl")
-include("Slope.jl")
-include("Mask.jl")
-include("PolarImage.jl")
+
+include("Types.jl")
+include("segments.jl")
 include("thresholding.jl")
 include("gapfraction.jl")
 include("crops.jl")

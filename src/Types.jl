@@ -202,39 +202,7 @@ function CameraLens(M::AbstractMatrix)
     CameraLens(size(M), (ci, cj), ρmax, [1/(pi/2)])
 end 
 
-#####
-##### PolarImage
-#####
 
-# The original image is required for EdgeDetection
-# imgsort: image sorted by ρ², then ϕ
-# imgspiral: image sorted by spiral_ind (lazily)
-"Type to contain an image and its polar transformations"
-struct PolarImage{T}
-    cl        :: CameraLens
-    img       :: AbstractArray{T, 2}
-    imgsort   :: Vector{T}       
-    imgspiral :: Union{missing, Vector{T}}
-    slope     :: Union{missing, Slope}
-    mask      :: Union{missing, Mask}
-end
-
-# PolarImage constructors. Note that masking and slope are mutually exclusive (for now no crops on slopes considered).
-function PolarImage(img::AbstractMatrix, cl::CameraLens, 
-        slope::Union{Missing, Slope, SlopeParams}=missing, 
-        mask ::Union{Missing, Mask,  MaksParams }=missing)
-    hasslope = !ismissing(slope)
-    hasmask  = !ismissing(mask)
-    if hasslope & hasmask
-        error("Masking (for crops) together slope is not yet supported. ")
-    end
-    @assert size(img) == size(cl)
-    imgsort   = img[cl.sort_ind]
-    imgspiral = hasspiral(cl) ? img[cl.spiral_ind] : missing
-    isa(slope, SlopeParams) && (slope = Slope(cl, slope))
-    isa(mask,  MaskParams ) && (mask  = Mask(cl, mask))
-    PolarImage{eltype(img)}(cl, img, imgsort, imgspiral, slope, mask)
-end
 
 #####
 ##### Mask
@@ -317,7 +285,7 @@ struct Mask
     mask_sort_ind   :: Vector{Int}   
     mask_ρ²sort     :: Vector{UInt32}  
     mask_ϕsort      :: Vector{Float64}
-    mask_spiral_ind :: Union{Missing, Vector{Int}}per ϕ
+    mask_spiral_ind :: Union{Missing, Vector{Int}}
 end
 
 function Mask(cl::CameraLens, mp::MaskParams)
@@ -356,4 +324,38 @@ params(m::Mask) = params(m.params)
 function Base.show(io::IO, mask::Mask) 
     θmask, ϕmin, ϕmax = params(mask)
     println("Mask for θ >", θmask, " and ϕ in [", ϕmin, ",", ϕmax,"].")
+end
+
+#####
+##### PolarImage
+#####
+
+# The original image is required for EdgeDetection
+# imgsort: image sorted by ρ², then ϕ
+# imgspiral: image sorted by spiral_ind (lazily)
+"Type to contain an image and its polar transformations"
+struct PolarImage{T}
+    cl        :: CameraLens
+    img       :: AbstractArray{T, 2}
+    imgsort   :: Vector{T}       
+    imgspiral :: Union{Missing, Vector{T}}
+    slope     :: Union{Missing, Slope}
+    mask      :: Union{Missing, Mask}
+end
+
+# PolarImage constructors. Note that masking and slope are mutually exclusive (for now no crops on slopes considered).
+function PolarImage(img::AbstractMatrix, cl::CameraLens, 
+        slope::Union{Missing, Slope, SlopeParams}=missing, 
+        mask ::Union{Missing, Mask,  MaskParams }=missing)
+    hasslope = !ismissing(slope)
+    hasmask  = !ismissing(mask)
+    if hasslope & hasmask
+        error("Masking (for crops) together slope is not yet supported. ")
+    end
+    @assert size(img) == size(cl)
+    imgsort   = img[cl.sort_ind]
+    imgspiral = hasspiral(cl) ? img[cl.spiral_ind] : missing
+    isa(slope, SlopeParams) && (slope = Slope(cl, slope))
+    isa(mask,  MaskParams ) && (mask  = Mask(cl, mask))
+    PolarImage{eltype(img)}(cl, img, imgsort, imgspiral, slope, mask)
 end

@@ -6,3 +6,4 @@ DataFrames
 Graphics
 ColorTypes
 StatsBase
+JLD2
