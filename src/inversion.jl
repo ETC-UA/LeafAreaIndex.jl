@@ -43,19 +43,15 @@ struct EllipsLUT   <: InversionMethod end
 ## ----------------
 
 "Generic inversion function. Default method is EllipsOpt."
-function inverse(polim::PolarImage, thresh = threshold(polim); kwargs...)
-    inverse(polim, thresh, EllipsOpt(); kwargs...)
+function inverse(polim::PolarImage, thresh = threshold(polim), im::InversionMethod=EllipsOpt(); kwargs...)
+    inverse(polim, thresh, im; kwargs...)
 end
 
-function inverse(polim::PolarImage, im::InversionMethod; kwargs...)
-    inverse(polim, threshold(polim), im; kwargs...)
-end
-
-"Default inversion function for set of gapfractions using EllipsOpt."
-function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float64};
-                  kwargs...)
-    inverse(θedges, θmid, K, EllipsOpt(); kwargs...)
-end
+# "Default inversion function for set of gapfractions using EllipsOpt."
+# function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float64};
+#                   kwargs...)
+#     inverse(θedges, θmid, K, EllipsOpt(); kwargs...)
+# end
 
 "Calculate the default number of rings for integration of a Polar Image. 
 Because the logarithm of the gap fraction is calculated, there's a delicate trade off

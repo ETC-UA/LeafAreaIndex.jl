@@ -1,7 +1,7 @@
 const LANGXIANG = 8
 
 # specialize on slope type
-function langxiang(polim::PolarImage, thresh, θ1::Real, θ2::Real, nϕ::Integer=LANGXIANG)
+function langxiang(polim::PolarImage, thresh, θ1::Real=0, θ2::Real=pi/2, nϕ::Integer=LANGXIANG)
     checkθ1θ2(θ1,θ2)
 
     ## WITHOUT SLOPE ##
