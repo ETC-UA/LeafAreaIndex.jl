@@ -1,5 +1,5 @@
 
-# TODO only used in clumping.jl? Move it there or rewrite it there for view indices only.
+# used in clumping (langxiang) and (currently unused) slope method of Espana
 "Return segments of pixelring [θ1, θ2] in n azimuth groups between 0 and 2π"
 function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
     checkθ1θ2(θ1,θ2)

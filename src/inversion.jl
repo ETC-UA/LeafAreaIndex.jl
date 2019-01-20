@@ -10,7 +10,7 @@ const RING_WIDTH = 5 / 180 * π
  (each typically with 4 or 8 pixels)."""
 const MILLER_GROUPS = 10
 "Minimum number of rings for PolarImages with slope."
-const NRINGS_MIN_SLOPE = 10
+const NRINGS_MIN_SLOPE = 25#10
 """Start view angle for use in Lang's regression method from Weiss 
 et al 2004 paragraph 2.2.2.2."""
 const LANG_START = 25/180*pi
@@ -62,12 +62,9 @@ Because the logarithm of the gap fraction is calculated, there's a delicate trad
 between more rings for more algorithmic accuracy and more pixels per ring 
 (i.e. less rings) for more accurate log gap fraction per ring."
 function Nrings_def(polim::PolarImage)::Int
-    N = ceil(Int, polim.cl.fθρ(pi/2) / MILLER_GROUPS)
-    if hasslope(polim)
-        return max(NRINGS_MIN_SLOPE, ceil(Int, N / AZIMUTH_GROUPS))
-    else
-        return N
-    end
+    N =  polim.cl.fθρ(pi/2) / MILLER_GROUPS
+    # hasslope(polim) && (N = max(NRINGS_MIN_SLOPE, N / INCIDENCE_GROUPS))
+    return ceil(Int, N)
 end
 function maxviewangle(polim::PolarImage, θmax=θMAX)
     if hasslope(polim)
@@ -195,9 +192,11 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
 end
 
 function inverse(polim::PolarImage, thresh, ::EllipsOpt;                     
-                    Nrings = Nrings_def(polim), θmax = maxviewangle(polim))
+                    Nrings = Nrings_def(polim), 
+                    θmax = maxviewangle(polim),
+                    Nτ = INCIDENCE_GROUPS)
     
-    θedges, θmid, K = contactfreqs(polim, 0.0, θmax, Nrings, thresh)
+    θedges, θmid, K = contactfreqs(polim, 0.0, θmax, Nrings, thresh;Nτ=Nτ)
     # Find inital value for LAI for optimization
     LAI_init = inverse(polim, thresh, Zenith57())
     inverse(θedges, θmid, K, EllipsOpt(); LAI_init=LAI_init)

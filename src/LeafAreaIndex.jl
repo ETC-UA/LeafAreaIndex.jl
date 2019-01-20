@@ -12,12 +12,24 @@ using Graphics: Point, norm
 using DataFrames
 
 export rawblueread, rawcolourread,
-    CameraLens, CameraLensParams, PolarImage, Slope, Mask,
-    pixels, gapfraction, contactfreqs, RedMax,
-    threshold, EdgeDetection, MinimumThreshold, RidlerCalvard,
-    inverse, Zenith57, Miller, Lang, EllipsLUT, EllipsOpt,
-    langxiang45, chencihlar,
-    calibrate_center, calibrate_projfun
+    CameraLens, CameraLensParams, PolarImage,
+    Slope, SlopeParams, Mask, MaskParams,
+    RedMax,#pixels, gapfraction, contactfreqs,
+    threshold, #EdgeDetection, MinimumThreshold, RidlerCalvard,
+    inverse, #Zenith57, Miller, Lang, EllipsLUT, EllipsOpt,
+    langxiang #chencihlar,
+    #calibrate_center, calibrate_projfun
+
+include("Types.jl")
+include("thresholding.jl")
+include("segments.jl")
+include("gapfraction.jl")
+include("inversion.jl")
+include("clumping.jl")
+include("crops.jl")
+include("ChenCihlar.jl")
+include("calibration.jl")
+include("io.jl")
 
 # reoccuring argument checks
 function checkθ1θ2(θ1, θ2)
@@ -26,6 +38,7 @@ function checkθ1θ2(θ1, θ2)
     @assert θ1 < θ2
 end
 
+#TODO replace with OnlineStats.jl
 "Specialed type for immutable streaming sum, based on PR #18 from StreamStats.jl"
 struct StreamMean
     streamsum::Float64
@@ -51,17 +64,5 @@ function fasthist(img::AbstractVector, edg::AbstractRange)
     end
     histcount
 end
-
-
-include("Types.jl")
-include("segments.jl")
-include("thresholding.jl")
-include("gapfraction.jl")
-include("inversion.jl")
-include("clumping.jl")
-include("crops.jl")
-include("ChenCihlar.jl")
-include("calibration.jl")
-include("io.jl")
 
 end # module

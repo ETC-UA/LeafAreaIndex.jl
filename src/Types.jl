@@ -206,8 +206,6 @@ function CameraLens(M::AbstractMatrix)
     CameraLens(size(M), (ci, cj), ρmax, [1/(pi/2)])
 end 
 
-
-
 #####
 ##### Slope
 #####
@@ -231,22 +229,14 @@ end
 
 struct Slope
     params :: SlopeParams
-    τsort  :: Vector{Float64} # incidence angle τ for sloped images, sorted as imgsort
+    cosτsort  :: Vector{Float64} # incidence angle τ for sloped images, sorted as imgsort
 end
 
 function Slope(cl::CameraLens, sp::SlopeParams)
     α, ϵ = params(sp)
-
-    τsort = copy(cl.ϕsort)
-    ρ²sort = cl.ρ²sort
-    fρ²θ(ρ²) = cl.fρθ.(sqrt.(ρ²)) 
-    
-    @inbounds @simd for i in eachindex(τsort)
-        θ = fρ²θ.(ρ²sort[i])
-        ϕ = τsort[i]
-        τsort[i] = acos(cos(θ)*cos(α) + cos(ϵ-ϕ)*sin(θ)*sin(α))
-    end
-    Slope(sp, τsort)
+    θs = cl.fρθ.(sqrt.(cl.ρ²sort))
+    cosτ = cos.(θs).*cos(α) + cos.(ϵ.-cl.ϕsort).*sin.(θs).*sin(α)
+    Slope(sp, cosτ)
 end
 Slope(cl::CameraLens, α::Real, ϵ::Real) = Slope(cl, SlopeParams(α, ϵ))
 
@@ -263,7 +253,7 @@ params(sl::Slope) = params(sl.params)
 
 function Base.show(io::IO, sl::Slope) 
     α, ϵ = params(sl)
-    println("Slope with ground inclination", α, " for aspect direction ", ϵ)
+    println("Slope with ground inclination ", α, " for aspect direction ", ϵ)
 end
 
 #####
