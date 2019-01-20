@@ -48,16 +48,16 @@ Returns function fθρ: θ [0, π/2] -> ρ [0, ρmax].
 function make_proj(clparams::CameraLensParams)
     Parameters.@unpack imgsize, lenscenter, ρmax, projcoefs = clparams
 
-    # @evalpoly is much more efficient if number of coefficients is known
     A = projcoefs
+    (length(A) == 1 || length(A) > 4) && return θ->ρmax * sum(A[i] * θ^i for i = 1:length(A))
+    # @evalpoly is much more efficient if number of coefficients is known
     if length(A) == 2
         fθρ(θ) = ρmax * @evalpoly(θ, 0, A[1], A[2])
+        # fθρ(θ) = ρmax * (A[1]*θ + A[2]*θ^2)
     elseif length(A) == 3
         fθρ(θ) = ρmax * @evalpoly(θ, 0, A[1], A[2], A[3])
     elseif length(A) == 4
         fθρ(θ) = ρmax * @evalpoly(θ, 0, A[1], A[2], A[3], A[4])
-    else #generic fallback
-        fθρ(θ) = ρmax * sum(A[i] * θ^i for i = 1:length(A))
     end
     return fθρ
 end
