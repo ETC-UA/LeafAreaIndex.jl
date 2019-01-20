@@ -1,22 +1,18 @@
 const LANGXIANG = 8
 
+# langxiang(polim::PolarImage, thresh,  θ1::Real, θ2::Real) = langxiang(polim, thresh, θ1, θ2, LANGXIANG)
+
 # specialize on slope type
-function langxiang(polim::PolarImage, thresh, θ1::Real, θ2::Real, nϕ::Integer)
-    langxiang(polim, polim.slope, thresh, θ1, θ2, nϕ)
-end
-
-# Without Slope
-function langxiang(polim::PolarImage, sl::NoSlope, thresh, θ1::Real, θ2::Real, 
-                   nϕ::Integer)
+function langxiang(polim::PolarImage, thresh, θ1::Real, θ2::Real, nϕ::Integer=LANGXIANG)
     checkθ1θ2(θ1,θ2)
-    segm = segments(polim, θ1, θ2, nϕ)
-    
-    clump_LX = log(mean(gapfraction.(segm, thresh))) / mean(loggapfraction.(segm, thresh))
-end
 
-# With Slope
-function langxiang(polim::PolarImage, sl::Slope, thresh, θ1::Real, θ2::Real, nϕ::Integer)
-    
+    ## WITHOUT SLOPE ##
+    if !hasslope(polim) 
+        segm = segments(polim, θ1, θ2, nϕ)
+        return log(mean(gapfraction.(segm, thresh))) / mean(loggapfraction.(segm, thresh))
+    end
+
+    ## WITH  SLOPE ##
     # like `segments` but also with τsort
     ind_first, ind_last = firstlastind(polim, θ1, θ2)
     segmvec = [eltype(polim)[] for i = 1:nϕ]
@@ -41,10 +37,6 @@ function langxiang(polim::PolarImage, sl::Slope, thresh, θ1::Real, θ2::Real, n
         end
     end
     clump_LX = log.(mean(T)) / mean(log.(T))
-end
-
-function langxiang45(polim::PolarImage, thresh, θ1::Real, θ2::Real)
-	langxiang(polim, thresh, θ1, θ2, LANGXIANG)
 end
 
 # for Chen Cihlar see 'ChenCihlar.jl'

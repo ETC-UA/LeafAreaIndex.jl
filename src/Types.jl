@@ -6,10 +6,10 @@ const APPROX_N = 100
 
 """
 CameraLensParams stores the parameters of a combination of Lens + Camera.
-Specifically, the image size, center of lens, maximum visible radius ρmax (in pixels) 
-and the parameter of the lens projection function in a vector A such that
-    ρ = ρmax * sum(A[i] * θ^i for i = 1:length(A))
-    with ρ the distance to center of image in pixels and θ the viewing angle
+Specifically, the image size, center of lens, maximum visible radius `ρmax` (in pixels) 
+and the parameter of the lens projection function in a vector `A` such that
+    `ρ = ρmax * sum(A[i] * θ^i for i = 1:length(A))`
+    with `ρ` the distance to center of image in pixels and `θ` the viewing angle
 """
 struct CameraLensParams
     imgsize    :: Tuple{Int,Int}
@@ -18,6 +18,8 @@ struct CameraLensParams
     projcoefs  :: Vector{Float64}
 end
 
+Base.size(clp::CameraLensParams) = clp.imgsize
+
 "Check consistency of CameraLensParams"
 function check(clparams::CameraLensParams)
     Parameters.@unpack imgsize, lenscenter, ρmax, projcoefs = clparams
@@ -25,14 +27,14 @@ function check(clparams::CameraLensParams)
     height, width = imgsize
     ci, cj = lenscenter
     
-    @assert height <= width
+    @assert height <= width "image detected in portrait mode"
     @assert width > 0 && height > 0 && ci > 0 && cj > 0
 
     abs(ci/height - 0.5) > 0.1 && @warn("cj ($ci) more than 10% away from center ($(height/2)).")
     abs(cj/width  - 0.5) > 0.1 && @warn("ci ($cj) more than 10% away from center ($(width/2).")
 
-    abs(ci/height - 0.5) > 0.2 && error("ci ($ci) more than 20% away from center ($(height/2).")
-    abs(cj/width - 0.5) > 0.2 && error("cj ($cj) more than 20% away from center ($(width/2)).")
+    @assert abs(ci/height - 0.5) < 0.2 "ci ($ci) more than 20% away from center ($(height/2)."
+    @assert abs(cj/width - 0.5)  < 0.2 "cj ($cj) more than 20% away from center ($(width/2))."
     
     fθρ = make_proj(clparams)
     fρθ = make_proj_inv(fθρ)
@@ -54,7 +56,7 @@ function make_proj(clparams::CameraLensParams)
         fθρ(θ) = ρmax * @evalpoly(θ, 0, A[1], A[2], A[3])
     elseif length(A) == 4
         fθρ(θ) = ρmax * @evalpoly(θ, 0, A[1], A[2], A[3], A[4])
-        else #generic fallback
+    else #generic fallback
         fθρ(θ) = ρmax * sum(A[i] * θ^i for i = 1:length(A))
     end
     return fθρ
@@ -73,7 +75,7 @@ function make_proj_inv(fθρ)
 end
 
 function check_proj(fθρ, fρθ)
-    @assert fθρ(0.0) >= 0
+    @assert fθρ(0.0) >= 0 
     @assert fθρ(pi/2) >= 2 
     all(diff(map(fθρ, range(0, stop=pi/2, length=100))) .> 0) || error("Incorrectly defined fθρ; fθρ not monotonic")
 
@@ -85,8 +87,6 @@ function check_proj(fθρ, fρθ)
          @assert isapprox(θ, fρθ(fθρ(θ)), atol=1e-3)
     end
 end
-
-Base.size(clp::CameraLensParams) = clp.imgsize
 
 function Base.show(io::IO, clp::CameraLensParams)
     println(io, "Parameters for CameraLens object with:")
@@ -100,7 +100,7 @@ end
 ##### CameraLensParams
 #####
 
-# Note UInt32 is sufficie nt to store ρ². FIXME premature optimization?
+# Note UInt32 is sufficient to store ρ². FIXME premature optimization?
 # mutable because we will only calculate `spiral_ind` when necessary (lazily)
 # we need 
 # * (inverse) projection function to go from view angle to polar radius in pixels
@@ -112,8 +112,8 @@ mutable struct CameraLens
     fθρ        :: Function      # projection function θ → ρ (θ in [0,π/2], ρ in pixels)
     fρθ        :: Function      # inverse projection function ρ → θ
     sort_ind   :: Vector{Int}   # indices to sort according to ρ², then ϕ
-    ρ²sorted   :: Vector{UInt32}  # ρ² sorted by sort_ind
-    ϕsorted    :: Vector{Float64} # ϕ  sorted by sort_ind
+    ρ²sort   :: Vector{UInt32}  # ρ² sorted by sort_ind
+    ϕsort    :: Vector{Float64} # ϕ  sorted by sort_ind
     spiral_ind :: Union{Missing, Vector{Int}} # indices to sort according to spiral: first per pixel ρ², then per ϕ
 end
 
@@ -131,18 +131,22 @@ function CameraLens(clparams::CameraLensParams; storage_path::Union{Missing,Stri
 end
 
 "Convenience constructor for CameraLens given parameters."
-function CameraLens(imgsize::Tuple{Int,Int}, lenscenter::Tuple{Int,Int}, ρmax::Int,
-        projcoefs::Vector{Float64}; storage_path::Union{Missing,String}=missing)
+function CameraLens(imgsize::Tuple{Int,Int}, 
+                    lenscenter::Tuple{Int,Int}, 
+                    ρmax::Int,
+                    projcoefs::Vector{Float64}; 
+                    storage_path::Union{Missing,String}=missing)
     clparams = CameraLensParams(imgsize, lenscenter, ρmax, projcoefs)
     return CameraLens(clparams; storage_path=storage_path)
 end
 
 "Retrieve the precomputed transformations from disk if `storage_path` given, else compute."
-function get_sortedρ²ϕ(clparams::CameraLensParams, storage_path::Union{Missing,String})
+function get_sortedρ²ϕ(clparams::CameraLensParams; 
+                       storage_path::Union{Missing,String}=missing)
     ismissing(storage_path) && (return make_sortedρ²ϕ(clparams))
     
     #isfile(storage_path) || throw(SystemError("storage_path not found: $storage_path."))
-    isfile(storage_path) || close(JLD2.jldopen(storage_path,"w"))
+    isfile(storage_path) || close(JLD2.jldopen(storage_path, "w"))
     past_hashes = JLD2.jldopen(storage_path, "r") do file
         keys(file)
     end
@@ -198,18 +202,18 @@ end
 function CameraLens(M::AbstractMatrix)
     height, width = size(M)
     ci, cj = ceil(Int, height/2), ceil(Int, width/2) #lenscenter
-    ρmax = min(lenscenter..., width-ci, height-cj)
+    ρmax = min(ci, cj, width-ci, height-cj)
     CameraLens(size(M), (ci, cj), ρmax, [1/(pi/2)])
 end 
 
 
 
 #####
-##### Mask
+##### Slope
 #####
 
 """
-Parameters (α, ϵ) to determine a slope with.
+Parameters (α, ϵ) that define a slope.
 The slope inclination α is in radians [0, π/3].
 The aspect ϵ is the downhill direction relative to the geographic north,
 in clockwise direction on a map (i.e. in counter-clockwise direction on 
@@ -235,10 +239,10 @@ function Slope(cl::CameraLens, sp::SlopeParams)
 
     τsort = copy(cl.ϕsort)
     ρ²sort = cl.ρ²sort
-    fρ²θ(ρ²) = cl.fρθ(sqrt(ρ²)) 
+    fρ²θ(ρ²) = cl.fρθ.(sqrt.(ρ²)) 
     
     @inbounds @simd for i in eachindex(τsort)
-        θ = fρ²θ(ρ²sort[i])
+        θ = fρ²θ.(ρ²sort[i])
         ϕ = τsort[i]
         τsort[i] = acos(cos(θ)*cos(α) + cos(ϵ-ϕ)*sin(θ)*sin(α))
     end
@@ -334,7 +338,7 @@ end
 # imgsort: image sorted by ρ², then ϕ
 # imgspiral: image sorted by spiral_ind (lazily)
 "Type to contain an image and its polar transformations"
-struct PolarImage{T}
+mutable struct PolarImage{T}
     cl        :: CameraLens
     img       :: AbstractArray{T, 2}
     imgsort   :: Vector{T}       
@@ -353,9 +357,26 @@ function PolarImage(img::AbstractMatrix, cl::CameraLens,
         error("Masking (for crops) together slope is not yet supported. ")
     end
     @assert size(img) == size(cl)
+
     imgsort   = img[cl.sort_ind]
     imgspiral = hasspiral(cl) ? img[cl.spiral_ind] : missing
     isa(slope, SlopeParams) && (slope = Slope(cl, slope))
     isa(mask,  MaskParams ) && (mask  = Mask(cl, mask))
     PolarImage{eltype(img)}(cl, img, imgsort, imgspiral, slope, mask)
 end
+
+hasslope(polim::PolarImage) = !ismissing(polim.slope)
+hasmask(polim::PolarImage)  = !ismissing(polim.mask)
+getϕsort(polim::PolarImage) = hasmask(polim) ? polim.mask.mask_ϕsort : polim.cl.ϕsort
+
+Base.eltype(polim::PolarImage{T}) where T = T
+Base.length(pm::PolarImage) = length(getϕsort(pm))
+Base.size(pm::PolarImage) = size(pm.cl)
+
+function Base.show(io::IO, polim::PolarImage)
+    slope = hasslope(polim) ? "with" : "without"
+    mask  = hasmask(polim) ? "with" : "without"
+    print(io::IO, "PolarImage $slope slope and $mask mask")
+end
+
+# TODO add get methods for (lazy) spiral accessors

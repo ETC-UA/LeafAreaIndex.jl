@@ -1,15 +1,18 @@
 module LeafAreaIndex
 
 using Optim: optimize, minimizer
-using Statistics: mean
-import FileIO, JLD2, Netpbm, Optim, ColorTypes, StatsBase, Statistics, Parameters
+using StatsBase: mean, midpoints
+import FileIO, JLD2, Netpbm, Parameters, StatsBase, Optim
+
+# import StatsBase #for `midpoints`
+import ColorTypes #in crops.jl for AbstractRGB
 
 # in calibration.jl
 using Graphics: Point, norm
 using DataFrames
 
 export rawblueread, rawcolourread,
-    CameraLens, PolarImage, Slope, Mask,
+    CameraLens, CameraLensParams, PolarImage, Slope, Mask,
     pixels, gapfraction, contactfreqs, RedMax,
     threshold, EdgeDetection, MinimumThreshold, RidlerCalvard,
     inverse, Zenith57, Miller, Lang, EllipsLUT, EllipsOpt,
@@ -30,7 +33,7 @@ struct StreamMean
 end
 StreamMean() = StreamMean(0.0, 0)
 update(sm::StreamMean, term) = StreamMean(sm.streamsum + term, sm.len + 1)
-Statistics.mean(sm::StreamMean) = sm.streamsum / sm.len
+StatsBase.mean(sm::StreamMean) = sm.streamsum / sm.len
 Base.empty!(sm::StreamMean) = StreamMean()
 Base.length(sm::StreamMean) = sm.len
 
@@ -54,9 +57,9 @@ include("Types.jl")
 include("segments.jl")
 include("thresholding.jl")
 include("gapfraction.jl")
-include("crops.jl")
 include("inversion.jl")
 include("clumping.jl")
+include("crops.jl")
 include("ChenCihlar.jl")
 include("calibration.jl")
 include("io.jl")

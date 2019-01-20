@@ -8,7 +8,7 @@ function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
     imgsort = polim.imgsort
     ϕsort = getϕsort(polim)
 
-    if isa(polim.mask, NoMask)
+    if !hasmask(polim)
         adj = n/2π    
         for ind in ind_first:ind_last
             ϕ = ϕsort[ind]
@@ -29,29 +29,17 @@ function segments(polim::PolarImage, θ1::Real, θ2::Real, n::Int)
     segmvec
 end
 
-function firstlastind(polim::PolarImage{T, NoSlope, Mask}, θ1::Real, θ2::Real) where T
-    checkθ1θ2(θ1,θ2)
-    ind_first = searchsortedfirst(polim.mask.mask_ρ²sort, polim.cl.fθρ(θ1)^2)
-    ind_last  = searchsortedlast( polim.mask.mask_ρ²sort, polim.cl.fθρ(θ2)^2)
-    ind_first, ind_last
-end
-
-getϕsort(polim::PolarImage{T,<:SlopeInfo, NoMask}) where T = polim.cl.ϕsort
-getϕsort(polim::PolarImage{T,<:SlopeInfo, Mask})   where T = polim.mask.mask_ϕsort
-
 "Return the first and last index for the sorted image to abtain pixels in a given zenith range."
-function firstlastind(polim::PolarImage{T, NoSlope, NoMask}, θ1::Real, θ2::Real) where T
-    firstlastind(polim.cl, θ1, θ2)
-end
-function firstlastind(polim::PolarImage{T, Slope, NoMask}, θ1::Real, θ2::Real) where T
-    α, ε = params(polim.slope)
-    θmax = min(θ2, pi/2 - α)
-    firstlastind(polim.cl, θ1, θmax)
-end
-function firstlastind(polim::PolarImage{T, NoSlope, Mask}, θ1::Real, θ2::Real) where T
+function firstlastind(polim::PolarImage, θ1::Real, θ2::Real)
     checkθ1θ2(θ1,θ2)
-    ind_first = searchsortedfirst(polim.mask.mask_ρ²sort, polim.cl.fθρ(θ1)^2)
-    ind_last  = searchsortedlast( polim.mask.mask_ρ²sort, polim.cl.fθρ(θ2)^2)
+    
+    ρ²sort = hasmask(polim) ? polim.mask.mask_ρ²sort : polim.cl.ρ²sort
+    if hasslope(polim)
+        α, ε = params(polim.slope)
+        θ2 = min(θ2, pi/2 - α)
+    end
+    ind_first = searchsortedfirst(ρ²sort, polim.cl.fθρ(θ1)^2)
+    ind_last  = searchsortedlast( ρ²sort, polim.cl.fθρ(θ2)^2)
     ind_first, ind_last
 end
 

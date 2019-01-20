@@ -3,7 +3,6 @@ const AZIMUTH_GROUPS = 360 #number of τ groups per 2π
 const MAX_ITER_τ = 5 # (Schleppi, 2007) says "after a few cycles"
 const SLOPE_TOL = 1e-3
 
-
 #fallback
 # WHY??
 #gapfraction(pixs, thresh) = mean(pixs .> thresh)
@@ -44,23 +43,51 @@ end
 
 weightedrings(polim::PolarImage, N::Integer) = weightedrings(polim, 0, pi/2, N)
 
-
-function contactfreqs(polim::PolarImage, θ1::Real, θ2::Real, N::Integer, thresh;kwargs...)
-    contactfreqs(polim, polim.slope, θ1, θ2, N, thresh; kwargs...)
-end
-
-function contactfreqs(polim::PolarImage, sl::NoSlope, θ1::Real, θ2::Real, 
-                      N::Integer, thresh)
+function contactfreqs(polim::PolarImage, θ1::Real, θ2::Real, N::Integer, thresh; 
+                      Nϕ=AZIMUTH_GROUPS, max_iter=MAX_ITER_τ, tol=SLOPE_TOL)
     checkθ1θ2(θ1,θ2)
     θedges, θmid = weightedrings(polim, θ1, θ2, N)    
     K = zeros(N)
-    for i = 1:N        
-        logT = loggapfraction(pixels(polim, θedges[i], θedges[i+1]), thresh)
-        K[i] = -logT * cos(θmid[i])
+    
+    ## WITHOUT SLOPE ##
+    if !hasslope(polim)
+        for i = 1:N        
+            logT = loggapfraction(pixels(polim, θedges[i], θedges[i+1]), thresh)
+            K[i] = -logT * cos(θmid[i])
+        end
+        return θedges, θmid, K
+    end
+
+    ## WITH  SLOPE ##
+    for i = 1:N
+        pixs = pixels(polim, θedges[i], θedges[i+1])
+  
+        ind_first, ind_last = firstlastind(polim, θ1, θ2)
+        τs = view(polim.slope.τsort, ind_first:ind_last)
+        
+        K[i] = contactfreqs_iterate(pixs, τs, thresh, θmid[i]; 
+                                    Nϕ=Nϕ, max_iter=max_iter, tol=tol)
+  
+        # Method España et al 2007. Nϕ different here!
+        # adj = slope_adj(polim.slope, θmid[i], ϕv)
+        # # we divide each ring in Nϕ azimuth  segments, calculate the slope 
+        # # adjustment and loggapfraction per segment, then take average weighted 
+        # # by segment length.
+        # segm = segments(polim, θedges[i], θedges[i+1], Nϕ)
+        # lengths = Int[length(seg) for seg in segm]
+        
+        # T = Float64[gapfraction(seg, thresh) for seg in segm]
+        # nz = find(T) # avoid 0.^(negative float)
+        # if isempty(nz) #to avoid infinity with log, assume at least 1 sky pixel
+        #     Tadj = 1 / sum(lengths)
+        # else
+        #     Tadj = sum(T[nz].^(1./adj[nz]) .* lengths[nz])/sum(lengths)
+        # end      
+        # K[i] = -log(Tadj) * cos(θmid[i])
+  
     end
     θedges, θmid, K
 end
-
 # Method Schleppi et al 2007
 function contactfreqs_iterate(pixs::AbstractArray, τs::AbstractArray, thresh, θ::Float64;
         Nϕ=AZIMUTH_GROUPS, max_iter=MAX_ITER_τ, tol=SLOPE_TOL)
@@ -84,39 +111,4 @@ function contactfreqs_iterate(pixs::AbstractArray, τs::AbstractArray, thresh, �
     K
 end
 
-function contactfreqs(polim::PolarImage, sl::Slope, θ1::Real, θ2::Real, 
-      N::Integer, thresh; Nϕ=AZIMUTH_GROUPS, max_iter=MAX_ITER_τ, tol=SLOPE_TOL)
 
-    checkθ1θ2(θ1,θ2)
-    θedges, θmid = weightedrings(polim, θ1, θ2, N)    
-
-    K = zeros(N)
-    for i = 1:N
-        pixs = pixels(polim, θedges[i], θedges[i+1])
-
-        ind_first, ind_last = firstlastind(polim, θ1, θ2)
-        τs = view(polim.slope.τsort, ind_first:ind_last)
-        
-        K[i] = contactfreqs_iterate(pixs, τs, thresh, θmid[i]; 
-                                    Nϕ=Nϕ, max_iter=max_iter, tol=tol)
-
-        # Method España et al 2007. Nϕ different here!
-        # adj = slope_adj(polim.slope, θmid[i], ϕv)
-        # # we divide each ring in Nϕ azimuth  segments, calculate the slope 
-        # # adjustment and loggapfraction per segment, then take average weighted 
-        # # by segment length.
-        # segm = segments(polim, θedges[i], θedges[i+1], Nϕ)
-        # lengths = Int[length(seg) for seg in segm]
-        
-        # T = Float64[gapfraction(seg, thresh) for seg in segm]
-        # nz = find(T) # avoid 0.^(negative float)
-        # if isempty(nz) #to avoid infinity with log, assume at least 1 sky pixel
-        #     Tadj = 1 / sum(lengths)
-        # else
-        #     Tadj = sum(T[nz].^(1./adj[nz]) .* lengths[nz])/sum(lengths)
-        # end      
-        # K[i] = -log(Tadj) * cos(θmid[i])
-
-    end
-    θedges, θmid, K
-end

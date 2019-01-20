@@ -1,3 +1,7 @@
+# This file contains the inversion procedures for LAI (and ALIA) 
+# calculation. The default is the ellipsoidal optimization method.
+
+
 # Constants
 
 "Ring width for zenith57."
@@ -28,13 +32,12 @@ const LAI_MIN = 0.05
 const LAI_MAX = 10.0
 
 abstract type InversionMethod end
+struct EllipsOpt   <: InversionMethod end
 struct Zenith57    <: InversionMethod end
 struct Lang        <: InversionMethod end
 struct Miller      <: InversionMethod end
 struct MillerRings <: InversionMethod end
-struct EllipsOpt   <: InversionMethod end
 struct EllipsLUT   <: InversionMethod end
-
 
 ## Generic function
 ## ----------------
@@ -60,14 +63,14 @@ between more rings for more algorithmic accuracy and more pixels per ring
 (i.e. less rings) for more accurate log gap fraction per ring."
 function Nrings_def(polim::PolarImage)::Int
     N = ceil(Int, polim.cl.fθρ(pi/2) / MILLER_GROUPS)
-    if isa(polim.slope, NoSlope)
-        return N
-    else
+    if hasslope(polim)
         return max(NRINGS_MIN_SLOPE, ceil(Int, N / AZIMUTH_GROUPS))
+    else
+        return N
     end
 end
 function maxviewangle(polim::PolarImage, θmax=θMAX)
-    if isa(polim.slope, Slope)
+    if hasslope(polim)
         α, ε = params(polim.slope)
         return min(θmax, pi/2 - α)
     else
