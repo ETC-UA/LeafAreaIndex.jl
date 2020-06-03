@@ -26,39 +26,42 @@ or in case you have the raw image from the camera, we provide a more accurate, d
     using LeafAreaIndex
     imgblue = rawblueread("image.NEF")
 
-A CameraLens type is constructed given an image size, the coordinates of the lens center and the (inverse) projection function. 
-(The projection function maps polar distance ρ [in pixels] on the image to the zenith angle θ [in radians] of the scene and is usually not linear.)
+Because the mapping of pixels on the image to coordinates in the scene is dependent on your camera setup, you must construct a configuration object with this information.
+A CameraLens type is constructed given an image size, the coordinates of the lens center and the (inverse) projection function. The projection function maps polar distance ρ [in pixels] on the image to the zenith angle θ [in radians] of the scene and is usually not linear. This project function depends on the specific (fish-eye) used and is usually polynomial approximated up to 2nd order as f(ρ/ρmax) = a₁θ + a₂θ² with ρmax the maximum visible radius. More general you can submit a vector `A` with the polynomial coefficients. The maximum radius ρmax and the lens center depends on the combination of camera together with the lens (and the image size depends obviously on the camera).
+
+    using LeafAreaIndex
+    mycameralens = CameraLens( (height, width), (centeri, centerj), ρmax, A)
 
 The basic PolarImage type is then constructed:
 
-    using LeafAreaIndex
-    mycameralens = CameraLens(height, width, centeri, centerj, funcθρ, funcρtoθ)
     polarimg = PolarImage(imgblue, mycameralens)
 
-The first processing step is automatical thresholding (default method Ridler Calvard):
+The first processing step is automatic thresholding (default method Ridler Calvard):
 
     thresh = threshold(polarimg)
 
-In the second step LAI is estimated through the inversion model. The default method assumes an ellipsoidal leave angle distribution and uses an optimization method.
+In the second step the (effective) LAI is estimated through the inversion model. The default method assumes an ellipsoidal leave angle distribution and uses a non-linear optimization method.
 
-    LAI = inverse(polarimg, thresh)
+    LAIe = inverse(polarimg, thresh)
 
-Finally, the clumping factor can be estimated with the method of Lang Xiang with 45ᵒ segments between view angles θ1 and θ2:
+Finally, the clumping factor can be estimated with the method of Lang Xiang (default with 45ᵒ segments in full view angle):
 
-    clump = langxiang45(polarimg, thresh, 0, pi/2)
+    clump = langxiang(polarimg, thresh)
+
+With clumping correction we obtain `LAI = LAIe / clump`.
 
 ## Further methods
 
 For images taken (always vertically upwards) on a domain with a *slope* of eg 10ᵒ and sloping downward to the East, you must include this information in your PolarImage with the `Slope(inclination, direction)` function:
 
-    myslope = Slope(10/180*pi, pi/2)
+    myslope = SlopeParams(10/180*pi, pi/2)
     polarimg = PolarImage(imgblue, mycameralens, myslope)
     
 For downward taken (crop) images, create a `mask` to cut out the photographer's shoes and use the `RedMax()` method instead of thresholding to separate soil from (green) plant material
 
-    mymask = Mask(pi/3, -2*pi/3, -pi/3)
-    polarimg = PolarImage(imgblue, mycameralens, myslope)
-    LAI = inverse(polarimg, RedMax())
+    mymask = MaskParams(pi/3, -2*pi/3, -pi/3)
+    polarimg = PolarImage(imgblue, mycameralens, mymask)
+    LAIe = inverse(polarimg, RedMax())
 
 Besides the default Ridler Calvard method, two more automatic *thresholding*methods Edge Detection and Minimum algorithm can be used:
     
@@ -78,7 +81,7 @@ Further *LAI* estimation methods for the inversion model are available:
     LAI4 = inverse(polarimg, thresh, Miller())
     LAI5 = inverse(polarimg, thresh, Lang())
 
-For the *clumping* factor, besides the method from Lang & Xiang, also the method from Chen & Chilar is available:
+For the *clumping* factor, besides the method from Lang & Xiang, also the (experimental) method from Chen & Chilar is available:
 
     clump2 = chencihlar(polarimg, thresh, 0, pi/2)
 
@@ -91,7 +94,7 @@ To access the pixels in a particular zenith range, `pixels(polarimg, pi/6, pi/3)
 
 The `segments` function can further split these ring pixels in n segments (eg. for clumping calculation). It returns a vector with n elements, each again a vector with the segment pixels.
 
-For the *gapfraction*, we suggest (see online documentation) to use the contact frequencies $K(\theta_V) = -\ln[T(\theta_v)] \cos\theta_V$ for LAI inversion calculations, with $T$ the gapfraction and $\theta_V$ the view angle. The input N determines the number of rings between view angles θ1 and θ2 for a polimg with a certain treshold. The function returns a vector with angle edges of the rings, the weighted average midpoint angle for each ring and the contact frequency for each ring.
+For the *gapfraction*, we suggest (see online documentation) to use the contact frequencies $K(\theta_V) = -\ln[T(\theta_v)] \cos\theta_V$ for LAI inversion calculations, with $T$ the gapfraction and $\theta_V$ the view angle. The input N determines the number of rings between view angles θ1 and θ2 for a polar image with a certain threshold. The function returns a vector with angle edges of the rings, the weighted average midpoint angle for each ring and the contact frequency for each ring.
 
     θedges, θmid, K = contactfreqs(polimg, θ1, θ2, N, thresh)
 

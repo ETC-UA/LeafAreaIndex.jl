@@ -1,3 +1,7 @@
+# This file contains the inversion procedures for LAI (and ALIA) 
+# calculation. The default is the ellipsoidal optimization method.
+
+
 # Constants
 
 "Ring width for zenith57."
@@ -6,7 +10,7 @@ const RING_WIDTH = 5 / 180 * π
  (each typically with 4 or 8 pixels)."""
 const MILLER_GROUPS = 10
 "Minimum number of rings for PolarImages with slope."
-const NRINGS_MIN_SLOPE = 10
+const NRINGS_MIN_SLOPE = 25#10
 """Start view angle for use in Lang's regression method from Weiss 
 et al 2004 paragraph 2.2.2.2."""
 const LANG_START = 25/180*pi
@@ -28,46 +32,38 @@ const LAI_MIN = 0.05
 const LAI_MAX = 10.0
 
 abstract type InversionMethod end
+struct EllipsOpt   <: InversionMethod end
 struct Zenith57    <: InversionMethod end
 struct Lang        <: InversionMethod end
 struct Miller      <: InversionMethod end
 struct MillerRings <: InversionMethod end
-struct EllipsOpt   <: InversionMethod end
 struct EllipsLUT   <: InversionMethod end
-
 
 ## Generic function
 ## ----------------
 
 "Generic inversion function. Default method is EllipsOpt."
-function inverse(polim::PolarImage, thresh = threshold(polim); kwargs...)
-    inverse(polim, thresh, EllipsOpt(); kwargs...)
+function inverse(polim::PolarImage, thresh = threshold(polim), im::InversionMethod=EllipsOpt(); kwargs...)
+    inverse(polim, thresh, im; kwargs...)
 end
 
-function inverse(polim::PolarImage, im::InversionMethod; kwargs...)
-    inverse(polim, threshold(polim), im; kwargs...)
-end
-
-"Default inversion function for set of gapfractions using EllipsOpt."
-function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float64};
-                  kwargs...)
-    inverse(θedges, θmid, K, EllipsOpt(); kwargs...)
-end
+# "Default inversion function for set of gapfractions using EllipsOpt."
+# function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float64};
+#                   kwargs...)
+#     inverse(θedges, θmid, K, EllipsOpt(); kwargs...)
+# end
 
 "Calculate the default number of rings for integration of a Polar Image. 
 Because the logarithm of the gap fraction is calculated, there's a delicate trade off
 between more rings for more algorithmic accuracy and more pixels per ring 
 (i.e. less rings) for more accurate log gap fraction per ring."
 function Nrings_def(polim::PolarImage)::Int
-    N = ceil(Int, polim.cl.fθρ(pi/2) / MILLER_GROUPS)
-    if isa(polim.slope, NoSlope)
-        return N
-    else
-        return max(NRINGS_MIN_SLOPE, ceil(Int, N / AZIMUTH_GROUPS))
-    end
+    N =  polim.cl.fθρ(pi/2) / MILLER_GROUPS
+    # hasslope(polim) && (N = max(NRINGS_MIN_SLOPE, N / INCIDENCE_GROUPS))
+    return ceil(Int, N)
 end
 function maxviewangle(polim::PolarImage, θmax=θMAX)
-    if isa(polim.slope, Slope)
+    if hasslope(polim)
         α, ε = params(polim.slope)
         return min(θmax, pi/2 - α)
     else
@@ -192,9 +188,11 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
 end
 
 function inverse(polim::PolarImage, thresh, ::EllipsOpt;                     
-                    Nrings = Nrings_def(polim), θmax = maxviewangle(polim))
+                    Nrings = Nrings_def(polim), 
+                    θmax = maxviewangle(polim),
+                    Nτ = INCIDENCE_GROUPS)
     
-    θedges, θmid, K = contactfreqs(polim, 0.0, θmax, Nrings, thresh)
+    θedges, θmid, K = contactfreqs(polim, 0.0, θmax, Nrings, thresh;Nτ=Nτ)
     # Find inital value for LAI for optimization
     LAI_init = inverse(polim, thresh, Zenith57())
     inverse(θedges, θmid, K, EllipsOpt(); LAI_init=LAI_init)
