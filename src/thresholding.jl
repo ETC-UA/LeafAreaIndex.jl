@@ -225,7 +225,7 @@ function threshold(img, ::MinimumThreshold; bins=256, maxiter=10_000)
         smooth_hist!(counts)
         isbimodal(counts) && break
     end
-    cnt == maxiter && warn("maximum iteration reached at $cnt in minimum_threshold")
+    cnt == maxiter && @warn("maximum iteration reached at $cnt in minimum_threshold")
     th = bimodalmin(counts)/bins
 end
 threshold(polim::PolarImage, ::MinimumThreshold) = threshold(pixels(polim), MinimumThreshold())

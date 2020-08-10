@@ -115,7 +115,7 @@ function chencihlarF(Wp::Float64, polim::PolarImage, thresh, θ1::Real, θ2::Rea
         abs(1-Lp/Lp_prev) < 0.01 && break
         Lp_prev = Lp
     end
-    counter == itermax && warn("chencihlar max iteration reached")
+    counter == itermax && @warn("chencihlar max iteration reached")
     Ω = log(Fm[1]) / log(Fmr[1]) * (1-Fmr[1])/(1-Fm[1])    
 end
 

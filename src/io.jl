@@ -63,8 +63,11 @@ function readraw(filepath::String; overwrite=false, rmcopy=true, rmpxm=true,
         raw2pxm = f -> run(`$DCRAW_EXE -4 -j -t 0 $f`)
         pxm_ext = ".ppm"
     else
-        raw2pxm = f -> run(`$DCRAW_EXE -d -4 -j -t 0 -r 0 0 0 1 $f`)
-        pxm_ext = ".pgm"
+        #raw2pxm = f -> run(`$DCRAW_EXE -d -4 -j -t 0 -r 0 0 0 1 $f`)
+        #pxm_ext = ".pgm"
+		# add De-Bayering
+		raw2pxm = f -> run(`$DCRAW_EXE -4 -j -t 0 -q 3 -o 0 $f`)
+		pxm_ext = ".ppm"
     end
 
     copyfile = joinpath(destdir, last(splitdir(filepath)))
