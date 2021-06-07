@@ -25,7 +25,7 @@
 
 const OVEREXP = 0.005
 
-const RAW_EXT = String[".3fr", ".ari", ".arw", ".bay", ".crw", ".cr2",
+const RAW_EXT = String[".3fr", ".ari", ".arw", ".bay", ".crw", ".cr2", ".cr3",
 ".cap", ".dcs", ".dcr", ".dng",
 ".drf", ".eip", ".erf", ".fff", ".iiq", ".k25", ".kdc", ".mdc", ".mef", ".mos", ".mrw",
 ".nef", ".nrw", ".obm", ".orf", ".pef", ".ptx", ".pxn", ".r3d", ".raf", ".raw", ".rwl",
