@@ -170,7 +170,7 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
     try
         res = optimize(fitdf, initial, Optim.LBFGS())
         ALIA, LAI = minimizer(res)
-        return LAI
+        return LAI, ALIA
     catch y
         if isa(y, DomainError)
             # in case LsqFit.curve_fit does not converge and wanders out of the
@@ -179,7 +179,7 @@ function inverse(θedges::AbstractArray, θmid::Vector{Float64}, K::Vector{Float
             upper = [pi/2 - 0.05, LAI_MAX]            
             res = optimize(fitfun, lower, upper, initial, Optim.Fminbox(Optim.LBFGS()))
             ALIA, LAI = minimizer(res)
-            return LAI
+            return LAI, ALIA
         else
             throw(y)
         end
